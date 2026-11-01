@@ -48,7 +48,7 @@ internal sealed class DialogService : IDialogService
         }
     }
 
-    public async Task<AddToDialogResult?> ShowAddToDialog(ViewModels.MainWindowViewModel vm)
+    public async Task<AddToDialogResult?> ShowAddToDialog(ViewModels.MainViewModel vm)
     {
         if (vm is null)
         {

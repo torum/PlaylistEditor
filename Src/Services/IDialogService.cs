@@ -12,7 +12,7 @@ internal interface IDialogService
 {
     Task<bool> ShowConfirmAsync(string title, string message);
 
-    Task<AddToDialogResult?> ShowAddToDialog(MainWindowViewModel vm);
+    Task<AddToDialogResult?> ShowAddToDialog(MainViewModel vm);
 
 
 }

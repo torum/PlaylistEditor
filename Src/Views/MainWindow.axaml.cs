@@ -20,7 +20,7 @@ namespace PlaylistEditorX.Views;
 public partial class MainWindow : Window
 {
     private readonly Services.IConfigurationService? _configurationService;
-    private readonly DataFormat<List<PlaylistItem>> _nodeFormat = DataFormat.CreateInProcessFormat<List<PlaylistItem>>("PlaylistItemFormat");
+    private readonly DataFormat<List<Entry>> _nodeFormat = DataFormat.CreateInProcessFormat<List<Entry>>("PlaylistItemFormat");
     private InsertionLineAdorner? _insertionLine;
     private AdornerLayer? _adornerLayer;
     private Point _pointerPressedPoint;
@@ -81,7 +81,6 @@ public partial class MainWindow : Window
             this.WindowState = WindowState.Normal;
         }
 
-
         this.PlaylistListBox.AddHandler(InputElement.PointerPressedEvent, OnItemPointerPressed, RoutingStrategies.Tunnel);
 
         this.Closing += Window_Closing;
@@ -95,7 +94,7 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
 
-        if (DataContext is not MainWindowViewModel _mainViewModel)
+        if (DataContext is not MainViewModel _mainViewModel)
         {
             return;
         }
@@ -119,7 +118,7 @@ public partial class MainWindow : Window
 
         base.OnClosed(e);
 
-        if (DataContext is not MainWindowViewModel _mainViewModel)
+        if (DataContext is not MainViewModel _mainViewModel)
         {
             return;
         }
@@ -140,12 +139,12 @@ public partial class MainWindow : Window
 
     private async void OnItemPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is not MainWindowViewModel)
+        if (DataContext is not MainViewModel)
             return;
 
-        if (e.Source is not Control control || control.DataContext is not PlaylistItem item)
+        if (e.Source is not Control control || control.DataContext is not Entry item)
         {
-            //Debug.WriteLine($"Not DataContext is PlaylistItem: {e.Source}");
+            //Debug.WriteLine($"Not DataContext is Entry: {e.Source}");
             return;
         }
 
@@ -162,8 +161,8 @@ public partial class MainWindow : Window
 
         var isSelected = selectedItems.Contains(item);
         var payload = isSelected
-            ? selectedItems.OfType<PlaylistItem>().ToList()
-            : new List<PlaylistItem> { item };
+            ? selectedItems.OfType<Entry>().ToList()
+            : new List<Entry> { item };
 
         // Keep the ListBox from replacing the multi-selection on pointer-down.
         if (isSelected) e.Handled = true;
@@ -229,7 +228,7 @@ public partial class MainWindow : Window
 
         var draggedNode = e.DataTransfer.TryGetValue(_nodeFormat);
 
-        if (draggedNode is List<PlaylistItem> draggedNodes)
+        if (draggedNode is List<Entry> draggedNodes)
         {
             var pos = e.GetPosition(PlaylistListBox);
             AutoScroll(PlaylistListBox, pos);
@@ -242,28 +241,6 @@ public partial class MainWindow : Window
             {
                 e.DragEffects = DragDropEffects.Move;
                 e.Handled = true;
-
-                /*
-                // Determine whether to draw the line above or below the item
-                var positionInItem = e.GetPosition(targetListBoxItem);
-                double itemHeight = targetListBoxItem.Bounds.Height;
-                double itemCenterY = itemHeight / 2;
-                double insertionY;
-                if (positionInItem.Y < itemCenterY)
-                {
-                    // Cursor is on the top half -> Intent is ABOVE
-                    // Map local 0 back to the ListBox coordinate space
-                    insertionY = targetListBoxItem.Bounds.Y;
-                    _isDropAbove = true;
-                }
-                else
-                {
-                    // Cursor is on the bottom half -> Intent is BELOW
-                    // Map local bottom back to the ListBox coordinate space
-                    insertionY = targetListBoxItem.Bounds.Y + itemHeight;
-                    _isDropAbove = false;
-                }
-                */
 
                 var positionInItem = e.GetPosition(targetListBoxItem);
                 var itemHeight = targetListBoxItem.Bounds.Height;
@@ -280,30 +257,6 @@ public partial class MainWindow : Window
 
                 ShowInsertionLine(edgeInListBox.Value.Y);
 
-
-
-                /*
-                
-                // Get the bounding box of the item being hovered over
-                var itemBounds = targetListBoxItem.Bounds;
-                double itemCenterY = itemBounds.Y + (itemBounds.Height / 2);
-
-                double insertionY;
-                if (currentPosition.Y < itemCenterY)
-                {
-                    // Cursor is on the top half -> Draw line at the top edge of this item
-                    insertionY = itemBounds.Y;
-                }
-                else
-                {
-                    // Cursor is on the bottom half -> Draw line at the bottom edge of this item
-                    insertionY = itemBounds.Y + itemBounds.Height;
-                }
-                */
-
-                // Trigger your adorner update method
-                //ShowInsertionLine(insertionY);
-
                 return;
             }
         }
@@ -316,7 +269,7 @@ public partial class MainWindow : Window
 
     private async void ListBox_Drop(object? sender, DragEventArgs e)
     {
-        if (DataContext is not MainWindowViewModel vm)
+        if (DataContext is not MainViewModel vm)
             return;
 
         if (e.DataTransfer.Formats.Contains(_nodeFormat))
@@ -325,7 +278,7 @@ public partial class MainWindow : Window
 
             if (draggedNode is not null)
             {
-                if ((e.Source as Control)?.DataContext is not PlaylistItem targetNode)
+                if ((e.Source as Control)?.DataContext is not Entry targetNode)
                 {
                     e.DragEffects = DragDropEffects.None;
                     e.Handled = true;
@@ -345,29 +298,6 @@ public partial class MainWindow : Window
                 RemoveInsertionLine();
 
                 PlaylistListBox.SelectedItems?.Clear();
-                /*
-                if (!ReferenceEquals(draggedNode, targetNode))
-                {
-                    // Success.
-
-                    //Debug.WriteLine($"DraggedNode = {draggedNode.Text}, TargetNode = {targetNode?.Text}");
-
-                    vm.ReorderItems(draggedNode, targetNode, _isDropAbove);
-
-                    // Report success.
-                    e.DragEffects = DragDropEffects.Move;
-                    e.Handled = true;
-
-                    RemoveInsertionLine();
-                }
-                else
-                {
-                    e.DragEffects = DragDropEffects.None;
-                    e.Handled = true;
-
-                    RemoveInsertionLine();
-                }
-                */
             }
 
             e.Handled = true;
@@ -425,7 +355,7 @@ public partial class MainWindow : Window
 
     private async void ListBox_FileDrop(object? sender, DragEventArgs e)
     {
-        if (DataContext is not MainWindowViewModel vm)
+        if (DataContext is not MainViewModel vm)
             return;
 
         if (e.DataTransfer.Formats.Contains(DataFormat.File))
@@ -434,15 +364,17 @@ public partial class MainWindow : Window
 
             if (files != null)
             {
-                // 3. Convert IStorageItem to local paths (for Desktop use cases)
                 var localPaths = files
                     .Select(file => file.TryGetLocalPath())
                     .Where(path => path != null)
                     .ToArray();
 
-                if (localPaths.Length > 0)
+                if (localPaths?.Length > 0)
                 {
-                    vm.AddFilesToPlaylist(localPaths!);
+                    Debug.WriteLine($"ListBox_FileDrop: Files dropped: {localPaths.Length}");
+
+                    //vm.AddFilesToPlaylist(localPaths!);
+                    await vm.FilesDroped(localPaths);
                 }
             }
 
@@ -466,7 +398,7 @@ public partial class MainWindow : Window
 
     private void PlaylistListBox_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (DataContext is not MainWindowViewModel vm)
+        if (DataContext is not MainViewModel vm)
             return;
 
         if (vm.SelectedItem == null)
@@ -547,7 +479,7 @@ public partial class MainWindow : Window
 
     private async Task SaveSettings()
     {
-        if (DataContext is not MainWindowViewModel _mainViewModel)
+        if (DataContext is not MainViewModel _mainViewModel)
         {
             return;
         }

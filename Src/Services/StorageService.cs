@@ -14,6 +14,7 @@ public class StorageService : IStorageService
 {
     private Window? _mainWindow;
     private bool _isInitialized;
+    private static readonly string[] _defaultAllTypesFilter = new[] { "*.*" };
 
     public StorageService()
     {
@@ -25,7 +26,7 @@ public class StorageService : IStorageService
         _isInitialized = true;
     }
 
-    public async Task<IReadOnlyList<string>> SelectFilesAsync(string title, string[] extensions, bool allowMultiple)
+    public async Task<IReadOnlyList<string>> SelectOpenFilesAsync(string title, string[] extensions, bool allowMultiple)
     {
         if (!_isInitialized)
         {
@@ -55,6 +56,65 @@ public class StorageService : IStorageService
             .ToList()!;
     }
 
+    public async Task<string?> SelectSingleOpenFileAsync(string title, string[] extensions)
+    {
+        if (!_isInitialized)
+        {
+            throw new InvalidOperationException("StorageService is not initialized.");
+        }
+
+        var topLevel = TopLevel.GetTopLevel(_mainWindow);
+        if (topLevel == null) return null;
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Playlist Files") { Patterns = extensions },
+                new FilePickerFileType("All Files") { Patterns = _defaultAllTypesFilter }
+            }
+        };
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(options);
+
+        if (files.Any())
+        {
+            var file = files[0];
+            return (file.Path.LocalPath);
+        }
+
+        return null;
+    }
+
+    public async Task<IStorageFile?> SelectSingleSaveFileAsync(string title, string defaultFileName, string[] extensions)
+    {
+        if (!_isInitialized)
+        {
+            throw new InvalidOperationException("StorageService is not initialized.");
+        }
+        var topLevel = TopLevel.GetTopLevel(_mainWindow);
+        if (topLevel == null) return null;
+        var options = new FilePickerSaveOptions
+        {
+            Title = title,
+            DefaultExtension = extensions.FirstOrDefault(),
+            SuggestedFileName = defaultFileName,
+            FileTypeChoices = new List<FilePickerFileType>
+            {
+                new FilePickerFileType("Playlist Files") { Patterns = extensions },
+                new FilePickerFileType("All Files") { Patterns = _defaultAllTypesFilter }
+            }
+        };
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(options);
+        if (file != null)
+        {
+            return file;//.Path.LocalPath;
+        }
+        return null;
+    }
+
     public async Task<(Stream Stream, string Name)?> OpenFileAsync(string title, string[] extensions)
     {
         if (!_isInitialized)
@@ -71,7 +131,8 @@ public class StorageService : IStorageService
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Allowed Files") { Patterns = extensions }
+                new FilePickerFileType("Playlist Files") { Patterns = extensions },
+                new FilePickerFileType("All Files") { Patterns = _defaultAllTypesFilter }
             }
         };
 

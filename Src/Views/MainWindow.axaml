@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="PlaylistEditorX.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
+        x:DataType="vm:MainViewModel"
         xmlns:models="using:PlaylistEditorX.Models"
         WindowDecorations="Full"
 		ExtendClientAreaToDecorationsHint="True"
@@ -14,7 +14,7 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:MainViewModel/>
     </Design.DataContext>
 
     <Window.Styles>
@@ -33,19 +33,18 @@
         <Menu x:Name="AppTitleBarMenu" Grid.Row="0" WindowDecorationProperties.ElementRole="User" HorizontalAlignment="Left">
             <MenuItem Header="_File">
                 <MenuItem Header="_New" Command="{Binding NewFileCommand}" />
-                <MenuItem Header="_Open TXT" Command="{Binding OpenTxtCommand}" />
-                <MenuItem Header="Open _M3U" Command="{Binding OpenM3uCommand}" />
-                <MenuItem Header="Open _XSPF" Command="{Binding OpenXspfCommand}" />
+                <MenuItem Header="_Open" Command="{Binding OpenFileCommand}" />
+                <MenuItem Header="_Save" Command="{Binding SaveFileCommand}" />
                 <Separator />
-                <MenuItem Header="Save M3U (ANSI)" Command="{Binding SaveM3uAnsiCommand}" />
-                <MenuItem Header="Save M3U (UTF-8)" Command="{Binding SaveM3uUtf8Command}" />
-                <MenuItem Header="Save M3U (UTF-8 BOM)" Command="{Binding SaveM3uBomCommand}" />
-                <MenuItem Header="Save XSPF" Command="{Binding SaveXspfCommand}" />
-                <MenuItem Header="Save iTunes TXT" Command="{Binding SaveITunesTxtCommand}" />
+                <MenuItem Header="Save as iTunes Txt" Command="{Binding SaveAsItunesTxtCommand}" />
+                <MenuItem Header="Save as M3U (ANSI)" Command="{Binding SaveAsM3uAnsiCommand}" />
+                <MenuItem Header="Save as M3U (UTF-8)" Command="{Binding SaveAsM3uUtf8Command}" />
+                <MenuItem Header="Save as M3U (UTF-8 BOM)" Command="{Binding SaveAsM3uBomCommand}" />
+                <MenuItem Header="Save as XSPF" Command="{Binding SaveAsXspfCommand}" />
             </MenuItem>
 
             <MenuItem Header="_Edit">
-                <MenuItem Header="Add Files to Playlist" Command="{Binding AddFilesToPlaylistCommand}" />
+                <MenuItem Header="Add Files to Playlist" Command="{Binding AddFilesCommand}" />
                 <MenuItem Header="Remove Selected" />
                 <MenuItem Header="Copy Selected Path" Command="{Binding CopySelectedPathCommand}" />
                 <MenuItem Header="Edit Path/URI" />
@@ -86,17 +85,17 @@
 					</ItemsPanelTemplate>
 				</ListBox.ItemsPanel>
                 <ListBox.Styles>
-                    <Style Selector="ListBoxItem" x:DataType="models:PlaylistItem">
+                    <Style Selector="ListBoxItem" x:DataType="models:Entry">
 						<Setter Property="Padding" Value="6"/>
 						<Setter Property="VerticalAlignment" Value="Center"/>
                         <Setter Property="ContextFlyout">
 							<Setter.Value>
                                 <MenuFlyout>
-                                    <MenuItem Header="Copy Selected Path" Command="{Binding Path=$parent[ListBox].((vm:MainWindowViewModel)DataContext).CopySelectedPathCommand   }" CommandParameter="{Binding $parent[ListBox].SelectedItem}"/>
+                                    <MenuItem Header="Copy Selected Path" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).CopySelectedPathCommand   }" CommandParameter="{Binding $parent[ListBox].SelectedItem}"/>
                                     <MenuItem Header="Remove Selected" />
                                     <MenuItem Header="Edit Path/URI" />
                                     <MenuItem Header="Open Containing Folder"
-                                                Command="{Binding Path=$parent[ListBox].((vm:MainWindowViewModel)DataContext).OpenContainingFolderCommand}" CommandParameter="{Binding $parent[ListBox].SelectedItem}" />
+                                                Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).OpenContainingFolderCommand}" CommandParameter="{Binding $parent[ListBox].SelectedItem}" />
 						        </MenuFlyout>
 							</Setter.Value>
 						</Setter>
@@ -107,8 +106,10 @@
                     <DataTemplate>
                         <Grid ColumnDefinitions="Auto,*,Auto" Margin="4">
                             <TextBlock Grid.Column="0" Text="{Binding Index}" Margin="6,6,12,6" />
-                            <TextBlock Grid.Column="1" Text="{Binding FilePath}" Margin="6,6,12,6" />
+                            <TextBlock Grid.Column="1" Text="{Binding FilePathOrUri}" Margin="6,6,12,6" />
+                            <!--
                             <TextBlock Grid.Column="2" Text="{Binding OriginalIndex}" IsVisible="False"/>
+                            -->
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -130,7 +131,8 @@
                     <TextBlock Text="{Binding StatusTextRight}" />
                 </Border>
                 <Border Grid.Column="2" Padding="3">
-                    <ProgressBar Width="120" IsIndeterminate="{Binding IsBusy}" />
+                    <ProgressBar Width="120" Margin="0" Height="20" Minimum="{Binding ProgressMinimum, Mode=OneWay}" Maximum="{Binding ProgressMaximum, Mode=OneWay}" Value="{Binding ProgressValue, Mode=OneWay}"
+                                  ShowProgressText="True" Background="Transparent" IsIndeterminate="False" />
                 </Border>
 
             </Grid>

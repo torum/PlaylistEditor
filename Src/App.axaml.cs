@@ -48,7 +48,7 @@ public partial class App : Application
 
             desktop.MainWindow = new MainWindow(configurationService)
             {
-                DataContext = new MainWindowViewModel(storageService, dialogService, configurationService)
+                DataContext = new MainViewModel(storageService, dialogService, configurationService)
             };
             storageService.Initialize(desktop.MainWindow);
         }
