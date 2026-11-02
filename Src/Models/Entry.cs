@@ -15,7 +15,10 @@ public abstract partial class Entry : ObservableObject
     [ObservableProperty]
     public partial string? FilePathOrUri { get; set; }
 
+    [NotifyPropertyChangedFor(nameof(IndexPlusOne))]
     [ObservableProperty]
     public partial int Index { get; set; }
+
+    public int IndexPlusOne => Index + 1;
 
 }
