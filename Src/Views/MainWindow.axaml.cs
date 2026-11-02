@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -44,6 +46,9 @@ public partial class MainWindow : Window
         _configurationService = configurationService;
 
         //InitializeComponent();
+
+        Bitmap bitmap = new(AssetLoader.Open(new Uri("avares://PlaylistEditorX/Assets/PlaylistEditorX.ico")));
+        this.ImageAppIcon.Source = bitmap;
 
         var mw = _configurationService.CurrentConfiguration.MainWindow;
 

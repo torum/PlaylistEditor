@@ -40,6 +40,9 @@ public partial class App : Application
         {
             RegisterGlobalExceptionHandlers();
 
+            // Register code page provider for ANSI/System Default code page encoding support.
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             Services.ConfigurationService configurationService = new();
             configurationService.Initialize(AppConfigFilePath);
             await configurationService.LoadConfigurationAsync();

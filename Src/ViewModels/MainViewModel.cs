@@ -4,6 +4,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FluentAvalonia.UI.Controls;
 using PlaylistEditorX.Models;
 using System;
 using System.Collections.Generic;
@@ -28,7 +29,8 @@ public partial class MainViewModel : ObservableObject
     private readonly Services.IDialogService _dialogService;
     private readonly Services.IConfigurationService _configurationService;
     public static readonly HashSet<string> PlaylistExtensions = new(StringComparer.OrdinalIgnoreCase) { ".txt", ".xspf", ".m3u", ".m3u8" };
-    private static readonly string[] _separator = new[] { "\r\n", "\n" };
+    //private static readonly string[] _separator = new[] { "\r\n", "\n" };
+    private static readonly string[] _separator = new[] { "\r\n", "\r", "\n" };
     private static readonly string[] _allExtensions = new[] { "*.*" };
 
     private string _currentFilePath = string.Empty;
@@ -93,6 +95,38 @@ public partial class MainViewModel : ObservableObject
     }
 
     [ObservableProperty]
+    public partial bool IsRearrangedOrder { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLocationEdited { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsDirty { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsCloseRequested { get; set; }
+
+    [ObservableProperty]
+    public partial string AppVersion { get; set; } = "1.0.0";
+
+    [ObservableProperty]
+    public partial string FindText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string ReplaceText { get; set; } = string.Empty;
+
+    #region == Status Bar ==
+
+    [ObservableProperty]
+    public partial string StatusTextLeft { get; set; } = "New";
+
+    [ObservableProperty]
+    public partial string StatusTextRight { get; set; } = "";
+
+    [ObservableProperty]
+    public partial bool IsStatusBarVisible { get; set; }
+
+    [ObservableProperty]
     public partial int ProgressValue
     {
         get;
@@ -113,37 +147,12 @@ public partial class MainViewModel : ObservableObject
         set;
     }
 
-    [ObservableProperty]
-    public partial bool IsRearrangedOrder { get; set; }
+    #endregion
 
-    [ObservableProperty]
-    public partial bool IsLocationEdited { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsDirty { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsCloseRequested { get; set; }
-
-    [ObservableProperty]
-    public partial string AppVersion { get; set; } = "1.0.0";
-
-    [ObservableProperty]
-    public partial string StatusTextLeft { get; set; } = "New";
-
-    [ObservableProperty]
-    public partial string StatusTextRight { get; set; } = "";
-
-    [ObservableProperty]
-    public partial bool IsStatusBarVisible { get; set; }
-
-    [ObservableProperty]
-    public partial string FindText { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string ReplaceText { get; set; } = string.Empty;
+    #region == Command Availability ==
 
     // These boolean properties control command availability
+
     [ObservableProperty]
     public partial bool CanSaveItunesTxt { get; set; }
 
@@ -179,6 +188,72 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool CanAddFiles { get; set; }
+
+    #endregion
+
+    #region == Error ==
+
+    public FAInfoBarSeverity InfoBarSeverity
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged();
+        }
+    } = FAInfoBarSeverity.Warning;
+
+    public string InfoBarMessage
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged();
+        }
+    } = string.Empty;
+
+    public string InfoBarTitle
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged();
+        }
+    } = string.Empty;
+
+    public bool IsInfoBarOpen
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged();
+        }
+    }
+
+    #endregion
 
     #endregion
 
@@ -667,43 +742,12 @@ public partial class MainViewModel : ObservableObject
 
     private void AddFilesITunes(string[] files)
     {
-        /*
-        // Convert TSV to NEW format
-        var newLines = new List<string>();
+        // Not supported. iTunes TXT has a specific format and cannot be simply appended with arbitrary files.
 
-        foreach (var item in Items)
-        {
-            var row = RawLines[item.OriginalIndex].Split('\t');
-            if (row.Length >= 31)
-            {
-                var unix = ConvertMacPathToUnixPath(row[30]);
-                newLines.Add(unix);
-            }
-        }
-
-        RawLines.Clear();
-        foreach (var l in newLines)
-            RawLines.Add(l);
-
-        Items.Clear();
-        for (int i = 0; i < RawLines.Count; i++)
-        {
-            Items.Add(new PlaylistItem
-            {
-                Index = i + 1,
-                FilePath = RawLines[i],
-                OriginalIndex = i + 1
-            });
-        }
-
-        //_currentPlaylistType = PlaylistType.New;
-
-        // Append new files
-        AddFilesNew(files);
-        */
-
-        IsDirty = true;
-
+        InfoBarTitle = "Not supported";
+        InfoBarSeverity = FAInfoBarSeverity.Error;
+        InfoBarMessage = $"Please convert to other format first. iTunes txt has a specific format and cannot be simply appended with arbitrary files.";
+        IsInfoBarOpen = true;
     }
 
     private void AddFilesM3u(string[] files)
@@ -734,6 +778,7 @@ public partial class MainViewModel : ObservableObject
 
         IsDirty = true;
 
+        StatusTextRight = $"";
     }
 
     private void AddFilesXspf(string[] files)
@@ -771,6 +816,7 @@ public partial class MainViewModel : ObservableObject
 
         IsDirty = true;
 
+        StatusTextRight = $"";
     }
 
     private void AddFilesNew(string[] files)
@@ -796,6 +842,15 @@ public partial class MainViewModel : ObservableObject
             index++;
         }
 
+        // Re-index
+        int rindex = 0;
+
+        foreach (var item in Items)
+        {
+            item.Index = rindex;
+            rindex++;
+        }
+
         IsDirty = true;
 
         // Enable/disable commands
@@ -807,13 +862,15 @@ public partial class MainViewModel : ObservableObject
         CanSaveXspf = true;
         CanConvertToM3u = true;
         CanConvertToXspf = true;
+
+        StatusTextRight = $"{index} files added.";
     }
 
     #endregion
 
     #region == Remove ==
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRemoveSelectedExecute))]
     public void RemoveSelected()
     {
         if (SelectedItem == null)
@@ -833,17 +890,63 @@ public partial class MainViewModel : ObservableObject
         IsRearrangedOrder = true;
     }
 
+    private bool CanRemoveSelectedExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (SelectedItem == null)
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
+    }
+
     #endregion
 
     #region == Find and Replace ==
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanReplaceAllExecute))]
     public void ReplaceAll()
     {
         if (string.IsNullOrWhiteSpace(FindText)) return;
         if (string.IsNullOrWhiteSpace(ReplaceText)) return;
 
         ReplaceAll(FindText, ReplaceText);
+    }
+
+    private bool CanReplaceAllExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(FindText))
+        {
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(ReplaceText))
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
     }
 
     public void ReplaceAll(string find, string replace)
@@ -1040,7 +1143,7 @@ public partial class MainViewModel : ObservableObject
 
     #region == Edit Path ==
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditSelectedPathExecute))]
     public void EditSelectedPath(string newValue)
     {
         /*
@@ -1077,6 +1180,27 @@ public partial class MainViewModel : ObservableObject
         // Update UI list
         SelectedItem.FilePath = newValue;
         */
+    }
+
+    private bool CanEditSelectedPathExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (SelectedItem == null)
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
     }
 
     private void EditITunesPath(int index, string newValue)
@@ -1123,7 +1247,7 @@ public partial class MainViewModel : ObservableObject
     }
 
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanCopySelectedPathExecute))]
     private async Task CopySelectedPath()
     {
         /*
@@ -1140,6 +1264,27 @@ public partial class MainViewModel : ObservableObject
             // ignore errors
         }
         */
+    }
+
+    private bool CanCopySelectedPathExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (SelectedItem == null)
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
     }
 
     #endregion
@@ -1284,9 +1429,9 @@ public partial class MainViewModel : ObservableObject
         {
             // Load UTF-16 → convert to UTF-8
             var text = File.ReadAllText(filename, Encoding.Unicode);
-            var utf8 = Encoding.UTF8.GetString(Encoding.Convert(Encoding.Unicode, Encoding.UTF8, Encoding.Unicode.GetBytes(text)));
+            //var utf8 = Encoding.UTF8.GetString(Encoding.Convert(Encoding.Unicode, Encoding.UTF8, Encoding.Unicode.GetBytes(text)));
 
-            var lines = utf8.Split(_separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var lines = text.Split(_separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
             int index = 0;
             int songIndex = 0;
@@ -1319,7 +1464,13 @@ public partial class MainViewModel : ObservableObject
                 if (cols.Length < 31)
                 {
                     Debug.WriteLine($"Error: Wrong column count. Invalid format! {cols.Length}:{line}");
-                    StatusTextRight = $"Error: Wrong column count. Invalid format! {cols.Length}:{line}";
+                    //StatusTextRight = $"Error: Wrong column count. Invalid format! {cols.Length}:{line}";
+
+                    InfoBarTitle = "Parse Error";
+                    InfoBarSeverity = FAInfoBarSeverity.Error;
+                    InfoBarMessage = $"Wrong column count. Invalid format! {cols.Length}:{line}";
+                    IsInfoBarOpen = true;
+
                     _currentPlaylistType = PlaylistType.Error;
                     IsBusy = false;
                     return;
@@ -1365,10 +1516,16 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error opening iTunes TXT file: {ex.Message}");
-            StatusTextRight = $"Error opening iTunes TXT file: {ex.Message}";
+            Debug.WriteLine($"Error opening iTunes TXT file: {ex}");
+            //StatusTextRight = $"Error opening iTunes TXT file: {ex.Message}";
             _currentPlaylistType = PlaylistType.Error;
-            
+
+            InfoBarTitle = "Unexpected Error";
+            InfoBarSeverity = FAInfoBarSeverity.Error;
+            InfoBarMessage = $"Error opening iTunes TXT file: {ex.Message}";
+            IsInfoBarOpen = true;
+
+            return;
         }
         finally
         {
@@ -1377,6 +1534,62 @@ public partial class MainViewModel : ObservableObject
             //ProgressMaximum = 0;
             ProgressValue = 0;
         }
+    }
+
+    private static bool IsPureAscii(byte[] bytes)
+    {
+        foreach (byte b in bytes)
+        {
+            if (b > 127) return false;
+        }
+        return true;
+    }
+
+    private static bool IsValidStrictUtf8(byte[] bytes)
+    {
+        try
+        {
+            Debug.WriteLine("IsValidStrictUtf8: Checking bytes for valid strict UTF-8 encoding.");
+            // Second parameter 'true' forces exception on illegal UTF8 byte groupings
+            var strictUtf8 = new UTF8Encoding(false, true);
+            strictUtf8.GetString(bytes);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    private static Encoding? HasBom(byte[] bytes)
+    {
+        Encoding? encoding = null;
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            encoding = Encoding.UTF8;
+        else if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+            encoding = Encoding.Unicode; // UTF-16 LE
+        else if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            encoding = Encoding.BigEndianUnicode; // UTF-16 BE
+        else if (bytes.Length >= 4 && bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0xFE && bytes[3] == 0xFF)
+            encoding = Encoding.UTF32;
+
+        return encoding;
+    }
+
+    private static (Encoding, bool) DetermineEncodingFromBytes(byte[] bytes)
+    {
+        // Check 1: Check for explicit Byte Order Marks (BOM)
+        var bomEncoding = HasBom(bytes);
+        if (bomEncoding != null) return (bomEncoding, true);
+
+        // Check 2: Check for Pure ASCII (everything is under 128)
+        if (IsPureAscii(bytes)) return (Encoding.ASCII, false);
+
+        // Check 3: Test for valid UTF-8 sequences (without a BOM)
+        if (IsValidStrictUtf8(bytes)) return (new UTF8Encoding(false), false);
+
+        // Check 4: Complete Fallback (System Default ANSI page)
+        return (Encoding.GetEncoding(0), false);
     }
 
     private async Task OpenM3u(string filename)
@@ -1397,7 +1610,44 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            var lines = File.ReadAllLines(filename, Encoding.Default);
+            //var lines = File.ReadAllLines(filename);
+
+            // Read the file as bytes to handle encoding detection
+            byte[] fileBytes = File.ReadAllBytes(filename);
+            // Process the in-memory bytes to find the encoding
+            var (detectedEncoding, hasBom) = DetermineEncodingFromBytes(fileBytes);
+            Debug.WriteLine($"OpenM3u: Detected encoding: {detectedEncoding.EncodingName}");
+
+            ReadOnlySpan<byte> byteSpan = fileBytes;
+
+            // Check if the file starts with the Unicode preamble like UTF-8's BOM(0xEF, 0xBB, 0xBF)
+            if (hasBom && byteSpan.StartsWith(detectedEncoding.Preamble))
+            {
+                // Slice past the 3-byte BOM
+                byteSpan = byteSpan[detectedEncoding.Preamble.Length..];
+            }
+
+            // Decode the text using the already-loaded bytes
+            string text = detectedEncoding.GetString(byteSpan);
+            //string text = detectedEncoding.GetString(fileBytes);
+
+            var lines = text.Split(_separator, StringSplitOptions.None);
+
+            if (lines.Length <= 0)
+            {
+                Debug.WriteLine("OpenM3u: No lines found in the file.");
+                IsBusy = false;
+
+                InfoBarTitle = "File Open Error";
+                InfoBarSeverity = FAInfoBarSeverity.Error;
+                InfoBarMessage = $"Error opening M3U file: No text found.";
+                IsInfoBarOpen = true;
+                
+                return;
+            }
+
+            (_currentPlaylist as PlaylistM3u)?.DetectedEncoding = detectedEncoding;
+            (_currentPlaylist as PlaylistM3u)?.HasBom = hasBom;
 
             int index = 0;
             int songIndex = 0;
@@ -1529,10 +1779,16 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error opening M3U file: {ex.Message}");
-            StatusTextRight = $"Error opening M3U file: {ex.Message}";
+            Debug.WriteLine($"Error opening M3U file: {ex}");
+            //StatusTextRight = $"Error opening M3U file: {ex.Message}";
             _currentPlaylistType = PlaylistType.Error;
             IsBusy = false;
+
+            InfoBarTitle = "Unexpected Error";
+            InfoBarSeverity = FAInfoBarSeverity.Error;
+            InfoBarMessage = $"Error opening M3U file: {ex.Message}";
+            IsInfoBarOpen = true;
+
             return;
         }
         finally
@@ -1623,8 +1879,14 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusTextLeft = "XSPF";
-            StatusTextRight = $"Error: {ex.Message}";
-            Debug.WriteLine($"Error opening XSPF file: {ex.Message}");
+            //StatusTextRight = $"Error: {ex.Message}";
+            Debug.WriteLine($"Error opening XSPF file: {ex}");
+
+            InfoBarTitle = "Unexpected Error";
+            InfoBarSeverity = FAInfoBarSeverity.Error;
+            InfoBarMessage = $"Error opening XSPF file: {ex.Message}";
+            IsInfoBarOpen = true;
+
             return;
         }
         finally
@@ -1640,12 +1902,9 @@ public partial class MainViewModel : ObservableObject
 
     #region == Convert Format ==
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanConvertToXspfExecute))]
     private void ConvertToXspf()
     {
-        IsLocationEdited = true;
-        IsDirty = true;
-
         switch (_currentPlaylistType)
         {
             case PlaylistType.ITunesTsv:
@@ -1664,6 +1923,27 @@ public partial class MainViewModel : ObservableObject
                 // nothing to do, already XSPF
                 break;
         }
+    }
+
+    private bool CanConvertToXspfExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Xspf)
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
     }
 
     private void ConvertITunesToXspf()
@@ -1882,10 +2162,66 @@ public partial class MainViewModel : ObservableObject
         */
     }
 
+
+    [RelayCommand(CanExecute = nameof(CanConvertToM3uExecute))]
+    private void ConvertToM3u()
+    {
+        switch (_currentPlaylistType)
+        {
+            case PlaylistType.ITunesTsv:
+                ConvertItunesToM3u();
+                break;
+            case PlaylistType.Xspf:
+                ConvertXspfToM3u();
+                break;
+            case PlaylistType.New:
+                ConvertNewToM3u();
+                break;
+            case PlaylistType.M3u:
+                // nothing to do, already M3U
+                break;
+        }
+    }
+
+    private bool CanConvertToM3uExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.M3u)
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private void ConvertItunesToM3u()
+    {
+        //
+    }
+
+    private void ConvertXspfToM3u()
+    {
+        //
+    }
+
+    private void ConvertNewToM3u()
+    {
+        //
+    }
+
     #endregion
 
     #region == Save File ==
-
 
     [RelayCommand(CanExecute = nameof(CanSaveFileExecute))]
     private async Task SaveFileAsync()
@@ -1940,7 +2276,6 @@ public partial class MainViewModel : ObservableObject
         return true;
     }
 
-
     private async Task SaveAsAsync()
     {
         // Currently, disabled in CanSaveFileExecute().
@@ -1951,15 +2286,19 @@ public partial class MainViewModel : ObservableObject
         }
 
         // let's just save as M3U for now?
-
-
     }
 
     [RelayCommand(CanExecute = nameof(CanSaveItunesTxt))]
     private async Task SaveAsItunesTxtAsync()
     {
-        if (IsBusy || Items.Count == 0 || _currentPlaylistType != PlaylistType.ITunesTsv || _currentPlaylist is not PlaylistItunes)
+        if (IsBusy || Items.Count == 0)
             return;
+
+        if (_currentPlaylistType != PlaylistType.ITunesTsv || _currentPlaylist is not PlaylistItunes)
+        {
+            Debug.WriteLine("Error: This shouldn't be happening. Current playlist is not ITunesTsv. Cannot save as ITunesTsv.");
+            return;
+        }
 
         string fileNameOnly = System.IO.Path.GetFileNameWithoutExtension(_currentFilePath);
         fileNameOnly ??= "playlist";
@@ -2040,7 +2379,10 @@ public partial class MainViewModel : ObservableObject
                 .Concat(Encoding.Unicode.GetBytes(tsv))
                 .ToArray();
 
-            File.WriteAllBytes(fileSavePath, bytes);
+            //File.WriteAllBytes(fileSavePath, bytes);
+            var temporaryPath = fileSavePath + ".tmp";
+            File.WriteAllBytes(temporaryPath, bytes);
+            File.Move(temporaryPath, fileSavePath, overwrite: true);
 
             StatusTextRight = $"Saved as txt: {fileSavePath}";
             IsDirty = false;
@@ -2054,66 +2396,26 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanSaveM3uExecute))]
     private async Task SaveM3uAsync()
     {
+        if (IsBusy || Items.Count == 0 || _currentPlaylistType != PlaylistType.M3u|| _currentPlaylist is not PlaylistM3u currentPlaylist)
+            return;
+
         string extension = System.IO.Path.GetExtension(_currentFilePath);
 
-        await SaveM3uCore(false, false, extension, _currentFilePath);
+        // Save default as M3U UTF-8 without BOM.
+        // Or.. the convention states it should be M3U ANSI if the original file was .m3u,
+        // but real world usage is that .m3u is also UTF-8 and .m3u is not necessarily ANSI, so let's just save as UTF-8 without BOM.
 
-        /*
-        using (var reader = new StreamReader(_currentFilePath, Encoding.Default, detectEncodingFromByteOrderMarks: true))
+        var detectedEncoding = currentPlaylist.DetectedEncoding;
+        var hasBom = currentPlaylist.HasBom;
+
+        if (detectedEncoding is null)
         {
-            // Force StreamReader to read the preamble/first character
-            reader.Peek(); //
-
-            // Get the preamble bytes expected for the detected encoding
-            byte[] expectedPreamble = reader.CurrentEncoding.GetPreamble(); //
-
-            // Check the underlying stream position
-            long streamPosition = reader.BaseStream.Position;
-
-            // If the stream position is exactly equal to the expected preamble length, 
-            // and that preamble length is greater than 0, it means a BOM was found and consumed.
-            if (expectedPreamble.Length > 0 && streamPosition == expectedPreamble.Length)
-            {
-                Console.WriteLine($"File has BOM. Encoding: {reader.CurrentEncoding.WebName}");
-            }
-            else
-            {
-                Console.WriteLine("File does NOT have a BOM. (StreamReader falls back to default)");
-            }
+            Debug.WriteLine("SaveM3uAsync: Detected encoding is null. Defaulting to UTF-8 without BOM.");
+            detectedEncoding = new UTF8Encoding(false);
+            hasBom = false;
         }
-        */
 
-        /*
-        public static string GetBomStatus(string filePath)
-        {
-            // Create a small buffer to store the header bytes
-            byte[] buffer = new byte[4];
-        
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                // Read up to 4 bytes
-                int bytesRead = stream.Read(buffer, 0, 4);
-            }
-
-            // Match the byte signatures
-            if (buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
-                return "UTF-8 with BOM"; //
-            
-            if (buffer[0] == 0xFF && buffer[1] == 0xFE)
-                return "UTF-16 Little Endian with BOM"; //
-            
-            if (buffer[0] == 0xFE && buffer[1] == 0xFF)
-                return "UTF-16 Big Endian with BOM";
-            
-            if (buffer[0] == 0x00 && buffer[1] == 0x00 && buffer[2] == 0xFE && buffer[3] == 0xFF)
-                return "UTF-32 Big Endian with BOM"; //
-            
-            if (buffer[0] == 0xFF && buffer[1] == 0xFE && buffer[2] == 0x00 && buffer[3] == 0x00)
-                return "UTF-32 Little Endian with BOM";
-
-            return "No BOM detected"; 
-        }
-        */
+        await SaveM3uCore(detectedEncoding, hasBom, extension, _currentFilePath);
     }
 
     private bool CanSaveM3uExecute()
@@ -2141,22 +2443,28 @@ public partial class MainViewModel : ObservableObject
         return true;
     }
 
+    [RelayCommand(CanExecute = nameof(CanSaveM3uAnsi))]
+    private Task SaveAsM3uAnsiAsync() => SaveAsM3uAsync(encoding: Encoding.GetEncoding(0), hasBom: false, extension: ".m3u");
+
     [RelayCommand(CanExecute = nameof(CanSaveM3uUtf8))]
-    private Task SaveAsM3uUtf8Async() => SaveAsM3uAsync(ansi: false, utf8Bom: false, extension: ".m3u");
+    private Task SaveAsM3uUtf8Async() => SaveAsM3uAsync(encoding: Encoding.UTF8, hasBom: false, extension: ".m3u");
+
+    [RelayCommand(CanExecute = nameof(CanSaveM3uUtf8))]
+    private Task SaveAsM3u8Utf8Async() => SaveAsM3uAsync(encoding: Encoding.UTF8, hasBom: false, extension: ".m3u8");
 
     [RelayCommand(CanExecute = nameof(CanSaveM3uBom))]
-    private Task SaveAsM3uBomAsync() => SaveAsM3uAsync(ansi: false, utf8Bom: true, extension: ".m3u");
+    private Task SaveAsM3uUtf8BomAsync() => SaveAsM3uAsync(encoding: Encoding.UTF8, hasBom: true, extension: ".m3u8");
 
-    [RelayCommand(CanExecute = nameof(CanSaveM3uUtf8))]
-    private Task SaveAsM3u8Async() => SaveAsM3uAsync(ansi: false, utf8Bom: true, extension: ".m3u8");
-
-    [RelayCommand(CanExecute = nameof(CanSaveM3uAnsi))]
-    private Task SaveAsM3uAnsiAsync() => SaveAsM3uAsync(ansi: true, utf8Bom: false, extension: ".m3u");
-
-    private async Task SaveAsM3uAsync(bool ansi, bool utf8Bom, string extension)
+    private async Task SaveAsM3uAsync(Encoding encoding, bool hasBom, string extension)
     {
-        if (IsBusy || Items.Count == 0 || _currentPlaylistType != PlaylistType.M3u || _currentPlaylist is not PlaylistM3u currentPlaylist)
+        if (IsBusy || Items.Count == 0)
             return;
+
+        if (_currentPlaylistType != PlaylistType.M3u || _currentPlaylist is not PlaylistM3u currentPlaylist)
+        {
+            Debug.WriteLine("TODO: Current playlist is not M3U. Cannot save as M3U.");
+            return;
+        }
 
         string fileNameOnly = System.IO.Path.GetFileNameWithoutExtension(_currentFilePath);
         fileNameOnly ??= "playlist";
@@ -2164,7 +2472,7 @@ public partial class MainViewModel : ObservableObject
         string[] allowedExtensions = new[] { "*.m3u", "*.m3u8" };
         var defaultFileName = fileNameOnly + extension;
 
-        if (ansi)
+        if ((encoding == Encoding.GetEncoding(0)) || (encoding == Encoding.ASCII))
         {
             allowedExtensions = new[] { "*.m3u" };
         }
@@ -2176,13 +2484,19 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        await SaveM3uCore(ansi, utf8Bom, extension, storageFile.Path.LocalPath);
+        await SaveM3uCore(encoding, hasBom, extension, storageFile.Path.LocalPath);
     }
 
-    private async Task SaveM3uCore(bool ansi, bool utf8Bom, string extension, string fileSavePath)
+    private async Task SaveM3uCore(Encoding encoding, bool hasBom, string extension, string fileSavePath)
     {
-        if (IsBusy || Items.Count == 0 || _currentPlaylistType != PlaylistType.M3u || _currentPlaylist is not PlaylistM3u currentPlaylist)
+        if (IsBusy || Items.Count == 0)
             return;
+
+        if (_currentPlaylistType != PlaylistType.M3u || _currentPlaylist is not PlaylistM3u currentPlaylist)
+        {
+            Debug.WriteLine("TODO: Current playlist is not M3U. Cannot save as M3U.");
+            return;
+        }
 
         if (string.IsNullOrEmpty(fileSavePath))
         {
@@ -2292,24 +2606,58 @@ public partial class MainViewModel : ObservableObject
                 }
             }
 
+            // Passing 0 explicitly tells .NET to fetch the OS active ANSI code page.
+            Encoding SystemDefaultEncoding = Encoding.GetEncoding(0);
+
             // Write the final text to the file with the specified encoding
-            if (ansi)
+            if (encoding == SystemDefaultEncoding)
             {
                 //var bytes = Encoding.GetEncoding("shift_jis").GetBytes(text);
-                var bytes = Encoding.GetEncoding(Encoding.Default.CodePage).GetBytes(finalText);
-                File.WriteAllBytes(fileSavePath, bytes);
+
+                /*
+                // Override with detected encoding if it is ANSI.
+                if (currentPlaylist.DetectedEncoding is not null && currentPlaylist.DetectedEncoding.CodePage != SystemDefaultEncoding.CodePage)
+                {
+                    SystemDefaultEncoding = currentPlaylist.DetectedEncoding;
+                }
+                */
+                Debug.WriteLine($"Saving M3U as ANSI using code page: {SystemDefaultEncoding.WebName}");
+
+                var bytes = SystemDefaultEncoding.GetBytes(finalText);
+                //File.WriteAllBytes(fileSavePath, bytes);
+                var temporaryPath = fileSavePath + ".tmp";
+                File.WriteAllBytes(temporaryPath, bytes);
+                File.Move(temporaryPath, fileSavePath, overwrite: true);
             }
-            else if (utf8Bom)
+            else if (encoding == Encoding.UTF8 && hasBom)
             {
                 var bytes = Encoding.UTF8.GetPreamble()
                     .Concat(Encoding.UTF8.GetBytes(finalText))
                     .ToArray();
 
-                File.WriteAllBytes(fileSavePath, bytes);
+                //File.WriteAllBytes(fileSavePath, bytes);
+                var temporaryPath = fileSavePath + ".tmp";
+                File.WriteAllBytes(temporaryPath, bytes);
+                File.Move(temporaryPath, fileSavePath, overwrite: true);
+            }
+            else if (hasBom)
+            {
+                var bytes = encoding.GetPreamble()
+                    .Concat(encoding.GetBytes(finalText))
+                    .ToArray();
+
+                //File.WriteAllBytes(fileSavePath, bytes);
+                var temporaryPath = fileSavePath + ".tmp";
+                File.WriteAllBytes(temporaryPath, bytes);
+                File.Move(temporaryPath, fileSavePath, overwrite: true);
             }
             else
             {
-                File.WriteAllText(fileSavePath, finalText, new UTF8Encoding(false));
+                //File.WriteAllText(fileSavePath, finalText, new UTF8Encoding(false));
+                var temporaryPath = fileSavePath + ".tmp";
+                
+                File.WriteAllText(temporaryPath, finalText, new UTF8Encoding(false));
+                File.Move(temporaryPath, fileSavePath, overwrite: true);
             }
 
             StatusTextRight = $"Saved as m3u: {fileSavePath}";
@@ -2325,8 +2673,14 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanSaveXspf))]
     private async Task SaveAsXspfAsync()
     {
-        if (IsBusy || Items.Count == 0 || _currentPlaylistType != PlaylistType.Xspf || _currentPlaylist is not PlaylistXspf currentPlaylist)
+        if (IsBusy || Items.Count == 0)
             return;
+
+        if (_currentPlaylistType != PlaylistType.Xspf || _currentPlaylist is not PlaylistXspf currentPlaylist)
+        {
+            Debug.WriteLine("TODO: Current playlist is not XSPF. Cannot save as XSPF.");
+            return;
+        }
 
         string fileNameOnly = System.IO.Path.GetFileNameWithoutExtension(_currentFilePath);
         fileNameOnly ??= "playlist";
@@ -2346,8 +2700,14 @@ public partial class MainViewModel : ObservableObject
 
     private async Task SaveXspfCoreAsync(string fileSavePath)
     {
-        if (IsBusy || Items.Count == 0 || _currentPlaylistType != PlaylistType.Xspf || _currentPlaylist is not PlaylistXspf currentPlaylist)
+        if (IsBusy || Items.Count == 0)
             return;
+
+        if (_currentPlaylistType != PlaylistType.Xspf || _currentPlaylist is not PlaylistXspf currentPlaylist)
+        {
+            Debug.WriteLine("TODO: Current playlist is not XSPF. Cannot save as XSPF.");
+            return;
+        }
 
         if (string.IsNullOrEmpty(fileSavePath))
         {
@@ -2415,7 +2775,11 @@ public partial class MainViewModel : ObservableObject
                 }
             }
 
-            doc.Save(fileSavePath);
+            //doc.Save(fileSavePath);
+            var temporaryPath = fileSavePath + ".tmp";
+            doc.Save(temporaryPath);
+            File.Move(temporaryPath, fileSavePath, overwrite: true);
+
             StatusTextRight = $"Saved as xspf: {fileSavePath}";
             IsDirty = false;
         }
@@ -2515,4 +2879,3 @@ public partial class MainViewModel : ObservableObject
     #endregion
 
 }
-

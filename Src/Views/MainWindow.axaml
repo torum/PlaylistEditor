@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		xmlns:fa="using:FluentAvalonia.UI.Controls"
         x:Class="PlaylistEditorX.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         xmlns:models="using:PlaylistEditorX.Models"
@@ -29,35 +30,42 @@
 
         </Border>
 
-        <!-- Menu -->
-        <Menu x:Name="AppTitleBarMenu" Grid.Row="0" WindowDecorationProperties.ElementRole="User" HorizontalAlignment="Left">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New" Command="{Binding NewFileCommand}" />
-                <MenuItem Header="_Open" Command="{Binding OpenFileCommand}" />
-                <MenuItem Header="_Save" Command="{Binding SaveFileCommand}" />
-                <Separator />
-                <MenuItem Header="Save as iTunes Txt" Command="{Binding SaveAsItunesTxtCommand}" />
-                <MenuItem Header="Save as M3U (ANSI)" Command="{Binding SaveAsM3uAnsiCommand}" />
-                <MenuItem Header="Save as M3U (UTF-8)" Command="{Binding SaveAsM3uUtf8Command}" />
-                <MenuItem Header="Save as M3U (UTF-8 BOM)" Command="{Binding SaveAsM3uBomCommand}" />
-                <MenuItem Header="Save as XSPF" Command="{Binding SaveAsXspfCommand}" />
-            </MenuItem>
+        <StackPanel Orientation="Horizontal" Grid.Row="0" WindowDecorationProperties.ElementRole="User">
 
-            <MenuItem Header="_Edit">
-                <MenuItem Header="Add Files to Playlist" Command="{Binding AddFilesCommand}" />
-                <MenuItem Header="Remove Selected" />
-                <MenuItem Header="Copy Selected Path" Command="{Binding CopySelectedPathCommand}" />
-                <MenuItem Header="Edit Path/URI" />
-                <MenuItem Header="Replace..." Command="{Binding ReplaceAllCommand}" />
-            </MenuItem>
+            <Image x:Name="ImageAppIcon" Width="24" Height="24" Margin="6,0,3,0" Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    WindowDecorationProperties.ElementRole="TitleBar"/>
+            
+            <!-- Menu -->
+            <Menu x:Name="AppTitleBarMenu" Margin="0" HorizontalAlignment="Left">
+                <MenuItem Header="_File">
+                    <MenuItem Header="_New" Command="{Binding NewFileCommand}" />
+                    <MenuItem Header="_Open" Command="{Binding OpenFileCommand}" />
+                    <MenuItem Header="_Save" Command="{Binding SaveFileCommand}" />
+                    <Separator />
+                    <MenuItem Header="Add Files to Playlist" Command="{Binding AddFilesCommand}" />
+                    <Separator />
+                    <MenuItem Header="Save as iTunes Txt" Command="{Binding SaveAsItunesTxtCommand}" />
+                    <MenuItem Header="Save as M3U (ANSI)" Command="{Binding SaveAsM3uAnsiCommand}" />
+                    <MenuItem Header="Save as M3U (UTF-8)" Command="{Binding SaveAsM3uUtf8Command}" />
+                    <MenuItem Header="Save as M3U8 (UTF-8)" Command="{Binding SaveAsM3u8Utf8Command}" />
+                    <MenuItem Header="Save as M3U8 (UTF-8 BOM)" Command="{Binding SaveAsM3uUtf8BomCommand}" />
+                    <MenuItem Header="Save as XSPF" Command="{Binding SaveAsXspfCommand}" />
+                </MenuItem>
 
-            <MenuItem Header="_Tools">
-                <!-- TODO:
-                <MenuItem Header="Convert to M3U" Command="{Binding ConvertToM3uCommand}" />
-                -->
-                <MenuItem Header="Convert to XSPF" Command="{Binding ConvertToXspfCommand}" />
-            </MenuItem>
-        </Menu>
+                <MenuItem Header="_Edit">
+                    <MenuItem Header="Remove Selected" Command="{Binding RemoveSelectedCommand}" />
+                    <MenuItem Header="Copy Selected Path" Command="{Binding CopySelectedPathCommand}" />
+                    <MenuItem Header="Edit Path/URI" Command="{Binding EditSelectedPathCommand}" />
+                    <MenuItem Header="Replace..." Command="{Binding ReplaceAllCommand}" />
+                </MenuItem>
+
+                <MenuItem Header="_Tools">
+                    <MenuItem Header="Convert to M3U" Command="{Binding ConvertToM3uCommand}" />
+                    <MenuItem Header="Convert to XSPF" Command="{Binding ConvertToXspfCommand}" />
+                </MenuItem>
+            </Menu>
+        </StackPanel>
+
 
         <!-- Main content -->
         <Grid Grid.Row="1">
@@ -67,72 +75,79 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <ListBox x:Name="PlaylistListBox"
-                      Margin="24,24,0,0"
-                    ItemsSource="{Binding Items}"
-                    SelectedItem="{Binding SelectedItem}"
-                    SelectionMode="Multiple"
-                    DragDrop.AllowDrop="True"
-                    DragDrop.DragOver="ListBox_DragOver"
-                    DragDrop.Drop="ListBox_Drop"
-                    PointerMoved="PlaylistListBox_PointerMoved"
-                    PointerPressed="PlaylistListBox_PointerPressed"
-                    PointerReleased="PlaylistListBox_PointerReleased"
-                    KeyDown="PlaylistListBox_KeyDown">
-				<ListBox.ItemsPanel>
-					<ItemsPanelTemplate>
-						<VirtualizingStackPanel/>
-					</ItemsPanelTemplate>
-				</ListBox.ItemsPanel>
-                <ListBox.Styles>
-                    <Style Selector="ListBoxItem" x:DataType="models:Entry">
-						<Setter Property="Padding" Value="6"/>
-						<Setter Property="VerticalAlignment" Value="Center"/>
-                        <Setter Property="ContextFlyout">
-							<Setter.Value>
-                                <MenuFlyout>
-                                    <MenuItem Header="Copy Selected Path" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).CopySelectedPathCommand   }" CommandParameter="{Binding $parent[ListBox].SelectedItem}"/>
-                                    <MenuItem Header="Remove Selected" />
-                                    <MenuItem Header="Edit Path/URI" />
-                                    <MenuItem Header="Open Containing Folder"
-                                                Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).OpenContainingFolderCommand}" CommandParameter="{Binding $parent[ListBox].SelectedItem}" />
-						        </MenuFlyout>
-							</Setter.Value>
-						</Setter>
-                    </Style>
-                </ListBox.Styles>
+            <Border CornerRadius="6" Background="{DynamicResource NavigationViewContentBackground}" Margin="1" Padding="1">
+                <ListBox x:Name="PlaylistListBox" 
+                        Margin="0"
+                        ItemsSource="{Binding Items}"
+                        SelectedItem="{Binding SelectedItem}"
+                        SelectionMode="Multiple"
+                        DragDrop.AllowDrop="True"
+                        DragDrop.DragOver="ListBox_DragOver"
+                        DragDrop.Drop="ListBox_Drop"
+                        PointerMoved="PlaylistListBox_PointerMoved"
+                        PointerPressed="PlaylistListBox_PointerPressed"
+                        PointerReleased="PlaylistListBox_PointerReleased"
+                        KeyDown="PlaylistListBox_KeyDown">
+				    <ListBox.ItemsPanel>
+					    <ItemsPanelTemplate>
+						    <VirtualizingStackPanel/>
+					    </ItemsPanelTemplate>
+				    </ListBox.ItemsPanel>
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem" x:DataType="models:Entry">
+						    <Setter Property="Padding" Value="6"/>
+						    <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="ContextFlyout">
+							    <Setter.Value>
+                                    <MenuFlyout>
+                                        <MenuItem Header="Copy Selected Path" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).CopySelectedPathCommand   }" CommandParameter="{Binding $parent[ListBox].SelectedItem}"/>
+                                        <MenuItem Header="Remove Selected" />
+                                        <MenuItem Header="Edit Path/URI" />
+                                        <MenuItem Header="Open Containing Folder"
+                                                    Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).OpenContainingFolderCommand}" CommandParameter="{Binding $parent[ListBox].SelectedItem}" />
+						            </MenuFlyout>
+							    </Setter.Value>
+						    </Setter>
+                        </Style>
+                    </ListBox.Styles>
 
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="4">
-                            <TextBlock Grid.Column="0" Text="{Binding Index}" Margin="6,6,12,6" />
-                            <TextBlock Grid.Column="1" Text="{Binding FilePathOrUri}" Margin="6,6,12,6" />
-                            <!--
-                            <TextBlock Grid.Column="2" Text="{Binding OriginalIndex}" IsVisible="False"/>
-                            -->
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="4">
+                                <TextBlock Grid.Column="0" Text="{Binding Index}" Margin="6,6,12,6" />
+                                <TextBlock Grid.Column="1" Text="{Binding FilePathOrUri}" Margin="6,6,12,6" />
+                                <!--
+                                <TextBlock Grid.Column="2" Text="{Binding OriginalIndex}" IsVisible="False"/>
+                                -->
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
 
-            <!-- Status bar + progress -->
-            <Border Grid.Row="1" BorderBrush="{DynamicResource CardStrokeBorderBrush}" BorderThickness="0,1,0,0" Opacity="1"></Border>
-            <Grid Grid.Row="2" Margin="12">
+			<Grid Grid.Row="1">
+				<!-- InfoBar -->
+				<fa:FAInfoBar Title="{Binding InfoBarTitle}" IsOpen="{Binding IsInfoBarOpen, Mode=TwoWay}" IsIconVisible="True" IsClosable="True" Severity="{Binding InfoBarSeverity}" Message="{Binding InfoBarMessage}" />
+			</Grid>
+            <Grid Grid.Row="2" Margin="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Padding="3">
-                    <TextBlock Text="{Binding StatusTextLeft}" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Column="0" Padding="12,8,12,8" VerticalAlignment="Center" HorizontalAlignment="Center" CornerRadius="6" 
+                        Background="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource LayerFillColorDefaultBrush}">
+                    <TextBlock Text="{Binding StatusTextLeft}" FontWeight="SemiBold" />
                 </Border>
-                <Border Grid.Column="1" Padding="3">
+                <Border Grid.Column="1"  Padding="12,8,12,8" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="6">
                     <TextBlock Text="{Binding StatusTextRight}" />
                 </Border>
-                <Border Grid.Column="2" Padding="3">
-                    <ProgressBar Width="120" Margin="0" Height="20" Minimum="{Binding ProgressMinimum, Mode=OneWay}" Maximum="{Binding ProgressMaximum, Mode=OneWay}" Value="{Binding ProgressValue, Mode=OneWay}"
-                                  ShowProgressText="True" Background="Transparent" IsIndeterminate="False" />
+                <Border Grid.Column="2" Padding="8" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="6">
+                    <ProgressBar Width="100" Margin="0" Height="20" Minimum="{Binding ProgressMinimum, Mode=OneWay}" Maximum="{Binding ProgressMaximum, Mode=OneWay}" Value="{Binding ProgressValue, Mode=OneWay}"
+                                  ShowProgressText="True" Background="Transparent" IsIndeterminate="False"/>
                 </Border>
 
             </Grid>

@@ -22,8 +22,11 @@ public class PlaylistM3u : Playlist
         FilePath = filePath;
     }
 
-    public bool IsEXTM3U { get; set; }
+    public Encoding DetectedEncoding { get; set; } = Encoding.UTF8;
+    public bool HasBom { get; set; }
 
+    public bool IsEXTM3U { get; set; }
     public string PlaylistName { get; set; } = string.Empty;
 
 }
+
