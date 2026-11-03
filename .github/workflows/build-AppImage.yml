@@ -16,7 +16,7 @@ jobs:
       # CONFIGURATION: Change these to match your project details
       PROJECT_PATH: "./Src/PlaylistEditor.csproj"
       APP_NAME: "PlaylistEditor"
-      DISPLAY_NAME: "Playlist Editor"
+      DISPLAY_NAME: "PlaylistEditor"
       BINARY_NAME: "PlaylistEditor" 
       DOTNET_VERSION: "10.0.x"       
 
