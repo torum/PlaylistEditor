@@ -21,5 +21,6 @@ For Linux and Windows, you can download the executables or installation packages
 Add, Remove, Rearrange order (Drag and Drop supported), Sort, Find & Replace and Edit path/URI.  
 
 ### Disclaimer
-I just needed a little converter for my iTunes library and playlists because I was transfering my library to MPD (music player daemon) on my Linux PC. So, please don't expect too much.
+I just needed a little converter for my iTunes library and playlists because I was transferring my library to MPD (music player daemon) on my Linux PC. So, please don't expect too much. 
 
+Bug reports, feedback, and pull requests are welcome.
