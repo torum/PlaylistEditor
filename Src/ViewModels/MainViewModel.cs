@@ -1998,7 +1998,8 @@ public partial class MainViewModel : ObservableObject
             {
                 foreach (var item in Items)
                 {
-                    if (item is not EntryNew entryNew) return;
+                    if (item is not EntryNew entryNew) continue;
+                    if (string.IsNullOrEmpty(entryNew.FilePathOrUri)) continue;
 
                     text += entryNew.FilePathOrUri + Environment.NewLine;//"\r\n";
                 }
@@ -2009,7 +2010,8 @@ public partial class MainViewModel : ObservableObject
             {
                 foreach (var item in Items)
                 {
-                    if (item is not EntryItunes entryItunes) return;
+                    if (item is not EntryItunes entryItunes) continue;
+                    if (string.IsNullOrEmpty(entryItunes.FilePathOrUri)) continue;
 
                     text += entryItunes.FilePathOrUri + Environment.NewLine;//"\r\n";
                 }
@@ -2020,9 +2022,10 @@ public partial class MainViewModel : ObservableObject
             {
                 foreach (var item in Items)
                 {
-                    if (item is not EntryXspf entryXspf) return;
+                    if (item is not EntryXspf entryXspf) continue;
+                    if (string.IsNullOrEmpty(entryXspf.FilePathOrUri)) continue;
 
-                    text += entryXspf.FilePathOrUri + Environment.NewLine;//"\r\n";
+                    text += ConvertUriToLocalPath(entryXspf.FilePathOrUri) + Environment.NewLine;//"\r\n";
                 }
 
                 await SaveM3uFileAsync(text, encoding, hasBom, fileSavePath);
@@ -2296,10 +2299,11 @@ public partial class MainViewModel : ObservableObject
             {
                 foreach (var item in Items)
                 {
-                    if (item is not EntryNew entryNew) return;
+                    if (item is not EntryNew entryNew) continue;
+                    if (string.IsNullOrEmpty(entryNew.FilePathOrUri)) continue;
 
                     var xTrack = new XElement(ns + "track",
-                        new XElement(ns + "location", entryNew.FilePathOrUri)
+                        new XElement(ns + "location", ConvertLocalPathToUri(entryNew.FilePathOrUri))
                     );
                     xTrackList.Add(xTrack);
                 }
@@ -2310,10 +2314,11 @@ public partial class MainViewModel : ObservableObject
             {
                 foreach (var item in Items)
                 {
-                    if (item is not EntryItunes entryItunes) return;
+                    if (item is not EntryItunes entryItunes) continue;
+                    if (string.IsNullOrEmpty(entryItunes.FilePathOrUri)) continue;
 
                     var xTrack = new XElement(ns + "track",
-                        new XElement(ns + "location", entryItunes.FilePathOrUri)
+                        new XElement(ns + "location", ConvertLocalPathToUri(entryItunes.FilePathOrUri))
                     );
                     xTrackList.Add(xTrack);
                 }
@@ -2324,10 +2329,11 @@ public partial class MainViewModel : ObservableObject
             {
                 foreach (var item in Items)
                 {
-                    if (item is not EntryM3u entryM3u) return;
+                    if (item is not EntryM3u entryM3u) continue;
+                    if (string.IsNullOrEmpty(entryM3u.FilePathOrUri)) continue;
 
                     var xTrack = new XElement(ns + "track",
-                        new XElement(ns + "location", entryM3u.FilePathOrUri)
+                        new XElement(ns + "location", ConvertLocalPathToUri(entryM3u.FilePathOrUri))
                     );
                     xTrackList.Add(xTrack);
                 }

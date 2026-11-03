@@ -10,6 +10,15 @@
             <TextBox x:Name="FindTextBox" Margin="0,2,0,0" />
             <TextBlock Text="Replace:" Margin="0,12,0,0"/>
             <TextBox x:Name="ReplaceTextBox" Margin="0,2,0,0" />
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Usage examples:" Margin="0,24,0,0" />
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">1. C:\Users\OLD-USER\ -> C:\Users\NEW-USER\</Run><Run xml:space="preserve"> (Simple replacements)</Run></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">2. C:\Users\USER\ -> (empty text)</Run><Run xml:space="preserve"> (Make them relative path)</Run></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">3. file:///C:/Users/me/Music/iTunes/iTunes%20Media/Music/ -> file://192.168.3.123/MyMusic/</Run><Run xml:space="preserve"> (A simple replacement)</Run></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">4. C:\Users\me\Music\ -> /home/me/Music/</Run><Run xml:space="preserve"> (Replace base path and change Windows path delimiter "\" to Unix path delimiter "/")</Run></TextBlock>
+                </StackPanel>      
+            </ScrollViewer>
         </StackPanel>
     </Grid>
 </UserControl>
