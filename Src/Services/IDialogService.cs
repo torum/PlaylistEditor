@@ -8,11 +8,12 @@ using static PlaylistEditorX.Services.DialogService;
 
 namespace PlaylistEditorX.Services;
 
-internal interface IDialogService
+public interface IDialogService
 {
     Task<bool> ShowConfirmAsync(string title, string message);
+    Task<string?> ShowEditDialog(string initialValue);
+    Task<(string?, string?)> ShowFindAndReplaceDialog();
+    Task ShowAboutDialog(string title, MainViewModel viewModel);
 
-    Task<AddToDialogResult?> ShowAddToDialog(MainViewModel vm);
-
-
+    bool IsDialogOpen { get; }
 }

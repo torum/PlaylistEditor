@@ -1,10 +1,14 @@
-﻿using Avalonia.Controls.Primitives;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentAvalonia.UI.Controls;
 using PlaylistEditorX.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -23,8 +27,7 @@ namespace PlaylistEditorX.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private const string AppDisplayName = "Playlist Editor";
-    private static string ConfigFilePath => "app.config";
-    private readonly DispatcherTimer _hideStatusTimer;
+    private const string AppDisplayVersion = "v1.0.0";
     private readonly Services.IStorageService _storageService;
     private readonly Services.IDialogService _dialogService;
     private readonly Services.IConfigurationService _configurationService;
@@ -47,21 +50,6 @@ public partial class MainViewModel : ObservableObject
         _configurationService = configurationService;
 
         _lastOpenedDirectory = _configurationService.CurrentConfiguration.LastOpenedDirectory;
-
-        // Status bar initially hidden
-        IsStatusBarVisible = false;
-
-        // Timer equivalent of TimerHideStatusbar
-        _hideStatusTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(5)
-        };
-
-        _hideStatusTimer.Tick += (_, _) =>
-        {
-            IsStatusBarVisible = false;
-            _hideStatusTimer.Stop();
-        };
 
         ClearPlaylist();
 
@@ -98,22 +86,17 @@ public partial class MainViewModel : ObservableObject
     public partial string WindowTitle { get; set; } = AppDisplayName;
 
     [ObservableProperty]
-    public partial bool IsLocationEdited { get; set; }
-
-    [ObservableProperty]
     public partial bool IsDirty { get; set; }
 
     [ObservableProperty]
     public partial bool IsCloseRequested { get; set; }
 
     [ObservableProperty]
-    public partial string AppVersion { get; set; } = "1.0.0";
+    public partial string AppVersion { get; set; } = AppDisplayVersion;
 
     [ObservableProperty]
-    public partial string FindText { get; set; } = string.Empty;
+    public partial string AppName { get; set; } = AppDisplayName;
 
-    [ObservableProperty]
-    public partial string ReplaceText { get; set; } = string.Empty;
 
     #region == Status Bar ==
 
@@ -122,9 +105,6 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string StatusTextRight { get; set; } = "";
-
-    [ObservableProperty]
-    public partial bool IsStatusBarVisible { get; set; }
 
     [ObservableProperty]
     public partial int ProgressValue
@@ -393,7 +373,6 @@ public partial class MainViewModel : ObservableObject
         WindowTitle = AppDisplayName;
         Items.Clear();
         IsDirty = false;
-        IsLocationEdited = false;
         _currentPlaylistType = PlaylistType.New;
         _currentPlaylist = new PlaylistNew();
         _currentFilePath = string.Empty;
@@ -568,23 +547,34 @@ public partial class MainViewModel : ObservableObject
     private async Task TryOpenStartupFile()
     {
         var args = Environment.GetCommandLineArgs();
-        if (args.Length <= 1)
-            return;
+        if (args.Length <= 1) return;
 
-        var file = args[1];
-        var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
+        try
+        {
+            var file = args[1];
+            var ext = System.IO.Path.GetExtension(file)?.ToLowerInvariant();
+            if (ext is null) return;
 
-        if (ext == ".m3u" || ext == ".m3u8")
-        {
-            await OpenM3u(file);
+            if (ext == ".m3u" || ext == ".m3u8")
+            {
+                await OpenM3u(file);
+            }
+            else if (ext == ".xspf")
+            {
+                await OpenXspf(file);
+            }
+            else if (ext == ".txt")
+            {
+                await OpenItunesTxt(file);
+            }
         }
-        else if (ext == ".xspf")
+        catch (Exception ex)
         {
-            await OpenXspf(file);
-        }
-        else if (ext == ".txt")
-        {
-            await OpenItunesTxt(file);
+            Debug.WriteLine($"Error opening startup file: {ex}");
+            InfoBarTitle = "Error opening startup file";
+            InfoBarSeverity = FAInfoBarSeverity.Error;
+            InfoBarMessage = $"Error opening startup file: {ex.Message}";
+            IsInfoBarOpen = true;
         }
     }
 
@@ -785,273 +775,129 @@ public partial class MainViewModel : ObservableObject
 
     #endregion
 
-    #region == Remove ==
-
-    [RelayCommand(CanExecute = nameof(CanRemoveSelectedExecute))]
-    public void RemoveSelected()
-    {
-        if (SelectedItem == null)
-            return;
-
-        //RawLines.RemoveAt(SelectedItem.OriginalIndex - 1);
-        Items.Remove(SelectedItem);
-
-        // Reindex
-        for (int i = 0; i < Items.Count; i++)
-        {
-            Items[i].Index = i + 1;
-        }
-
-        IsDirty = true;
-    }
-
-    private bool CanRemoveSelectedExecute()
-    {
-        if (IsBusy)
-        {
-            return false;
-        }
-        if (SelectedItem == null)
-        {
-            return false;
-        }
-        if (Items.Count <= 0)
-        {
-            return false;
-        }
-        if (_currentPlaylistType == PlaylistType.Error)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    #endregion
-
     #region == Find and Replace ==
 
-    [RelayCommand(CanExecute = nameof(CanReplaceAllExecute))]
-    public void ReplaceAll()
+    [RelayCommand(CanExecute = nameof(CanFindAndReplaceExecute))]
+    public async Task FindAndReplace()
     {
-        if (string.IsNullOrWhiteSpace(FindText)) return;
-        if (string.IsNullOrWhiteSpace(ReplaceText)) return;
+        var (findText, replaceText) = await _dialogService.ShowFindAndReplaceDialog();
 
-        ReplaceAll(FindText, ReplaceText);
+        if (string.IsNullOrEmpty(findText)) return; // Don't check for whitespace, as user may want to replace with empty string.
+
+        if (replaceText is null) return; // Don't check for empty or whitespace, as user may want to replace with empty string.
+
+        FindAndReplaceAll(findText, replaceText);
     }
 
-    private bool CanReplaceAllExecute()
+    private bool CanFindAndReplaceExecute()
     {
-        if (IsBusy)
-        {
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(FindText))
-        {
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(ReplaceText))
-        {
-            return false;
-        }
-        if (Items.Count <= 0)
-        {
-            return false;
-        }
-        if (_currentPlaylistType == PlaylistType.Error)
-        {
-            return false;
-        }
+        if (IsBusy) return false;
+        if (Items.Count <= 0) return false;
+        if (_currentPlaylistType == PlaylistType.Error) return false;
         return true;
     }
 
-    public void ReplaceAll(string find, string replace)
+    public void FindAndReplaceAll(string find, string replace)
     {
         if (IsBusy) return;
-        if (string.IsNullOrWhiteSpace(find)) return;
-        //if (RawLines.Count == 0) return;
+        if (string.IsNullOrEmpty(find)) return;// Don't check for whitespace, as user may want to replace with empty string.
+        if (replace is null) return;// Don't check for empty or whitespace, as user may want to replace with empty string.
 
         IsBusy = true;
-        IsLocationEdited = true;
-        IsDirty = true;
+        StatusTextRight = "Replacing...";
 
-        StatusTextRight = "";
-        StatusTextLeft = "Replacing...";
-        IsStatusBarVisible = true;
+        int itemCount = 0;
 
-        Items.Clear();
-
-        switch (_currentPlaylistType)
+        try
         {
-            case PlaylistType.ITunesTsv:
-                ReplaceAllITunes(find, replace);
-                break;
-
-            case PlaylistType.M3u:
-                ReplaceAllM3u(find, replace);
-                break;
-
-            case PlaylistType.Xspf:
-                ReplaceAllXspf(find, replace);
-                break;
-
-            case PlaylistType.New:
-                ReplaceAllNew(find, replace);
-                break;
-
-            case PlaylistType.Error:
-                // do nothing
-                break;
-        }
-
-        StatusTextRight = "";
-        IsBusy = false;
-    }
-
-    private void ReplaceAllITunes(string find, string replace)
-    {
-        /*
-        var newLines = new List<string>();
-
-        for (int line = 0; line < RawLines.Count; line++)
-        {
-            var row = RawLines[line].Split('\t');
-
-            if (row.Length >= 31)
+            foreach (var item in Items)
             {
-                row[30] = row[30].Replace(find, replace, StringComparison.Ordinal);
+                var originalValue = item.FilePathOrUri;
+                if (originalValue is null) continue;
 
-                // Rebuild TSV line
-                var rebuilt = string.Join("\t", row);
-                newLines.Add(rebuilt);
+                var newValue = originalValue.Replace(find, replace, StringComparison.CurrentCulture);
 
-                Items.Add(new PlaylistItem
+                if (item is EntryNew entryNew)
                 {
-                    Index = line + 1,
-                    FilePath = row[30],
-                    OriginalIndex = line + 1
-                });
-            }
-            else
-            {
-                Items.Add(new PlaylistItem
+                    entryNew.FilePathOrUri = newValue;
+                    itemCount++;
+                }
+                else if (item is EntryItunes entryItunes)
                 {
-                    Index = line + 1,
-                    FilePath = "Error",
-                    OriginalIndex = line + 1
-                });
+                    var line = entryItunes.OriginalLine;
 
-                newLines.Add(RawLines[line]);
-            }
+                    var cols = line.Split('\t');
 
-            StatusTextRight = $"Processing... {line + 1}";
-        }
+                    if (cols.Length <= 1)
+                    {
+                        // end of line?
+                        return;
+                    }
 
-        RawLines.Clear();
-        foreach (var l in newLines)
-            RawLines.Add(l);
-        */
-    }
+                    if (cols.Length < 31)
+                    {
+                        Debug.WriteLine($"Error: Wrong column count. Invalid format! {cols.Length}:{line}");
+                        StatusTextRight = $"Error: Wrong column count. Invalid format! {cols.Length}:{line}";
+                        _currentPlaylistType = PlaylistType.Error;
+                        IsBusy = false;
+                        return;
+                    }
 
-    private void ReplaceAllM3u(string find, string replace)
-    {
-        /*
-        var newLines = new List<string>();
-        int index = 1;
+                    int columnIndex = 0;
+                    var updatedLine = string.Empty;
+                    foreach (var col in cols)
+                    {
+                        if (columnIndex == 30)
+                        {
+                            // Update the path.
+                            updatedLine += newValue + '\t';
+                        }
+                        else
+                        {
+                            updatedLine += col + '\t';
+                        }
+                        columnIndex++;
+                    }
 
-        for (int i = 0; i < RawLines.Count; i++)
-        {
-            var line = RawLines[i];
-
-            if (!line.StartsWith("#", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(line))
-            {
-                var replaced = line.Replace(find, replace, StringComparison.Ordinal);
-                newLines.Add(replaced);
-
-                Items.Add(new PlaylistItem
+                    entryItunes.FilePathOrUri = newValue;
+                    entryItunes.OriginalLine = updatedLine;// + "\r\n";
+                    itemCount++;
+                }
+                else if (item is EntryM3u entryM3u)
                 {
-                    Index = index,
-                    FilePath = replaced,
-                    OriginalIndex = index
-                });
+                    entryM3u.FilePathOrUri = newValue;
+                    itemCount++;
+                }
+                else if (item is EntryXspf entryXspf)
+                {
+                    entryXspf.FilePathOrUri = newValue;
 
-                index++;
+                    if (entryXspf.XElement != null)
+                    {
+                        var loc = entryXspf.XElement.Element("location");
+                        loc?.Value = newValue;
+                    }
+                    itemCount++;
+                }
             }
-            else
-            {
-                newLines.Add(line);
-            }
 
-            StatusTextRight = $"Processing... {index}";
+            IsDirty = true;
+
+            StatusTextRight = $"Found and Replaced {itemCount} item(s).";
         }
-
-        RawLines.Clear();
-        foreach (var l in newLines)
-            RawLines.Add(l);
-        */
-    }
-
-    private void ReplaceAllXspf(string find, string replace)
-    {
-        /*
-        if (_xspfDoc == null)
-            return;
-
-        var newLines = new List<string>();
-        int index = 1;
-
-        var tracks = _xspfDoc.Descendants("track");
-
-        foreach (var track in tracks)
+        catch (Exception ex)
         {
-            var loc = track.Element("location");
-            if (loc == null) continue;
-
-            var newValue = loc.Value.Replace(find, replace, StringComparison.Ordinal);
-            loc.Value = newValue;
-
-            newLines.Add(newValue);
-
-            Items.Add(new PlaylistItem
-            {
-                Index = index,
-                FilePath = newValue,
-                OriginalIndex = index
-            });
-
-            StatusTextRight = $"Processing... [{index}]";
-            index++;
+            Debug.WriteLine($"Error in FindAndReplaceAll: {ex}");
+            StatusTextRight = "";
+            InfoBarTitle = "Error in Find and Replace";
+            InfoBarSeverity = FAInfoBarSeverity.Error;
+            InfoBarMessage = $"Error in Find and Replace: {ex.Message}";
+            IsInfoBarOpen = true;
         }
-
-        RawLines.Clear();
-        foreach (var l in newLines)
-            RawLines.Add(l);
-        */
-    }
-
-    private void ReplaceAllNew(string find, string replace)
-    {
-        /*
-        var newLines = new List<string>();
-
-        for (int i = 0; i < RawLines.Count; i++)
+        finally
         {
-            var replaced = RawLines[i].Replace(find, replace, StringComparison.Ordinal);
-            newLines.Add(replaced);
-
-            Items.Add(new PlaylistItem
-            {
-                Index = i + 1,
-                FilePath = replaced,
-                OriginalIndex = i + 1
-            });
-
-            StatusTextRight = $"Processing... {i + 1}";
+            IsBusy = false;
         }
-
-        RawLines.Clear();
-        foreach (var l in newLines)
-            RawLines.Add(l);
-        */
     }
 
     #endregion
@@ -1059,129 +905,81 @@ public partial class MainViewModel : ObservableObject
     #region == Edit Path ==
 
     [RelayCommand(CanExecute = nameof(CanEditSelectedPathExecute))]
-    public void EditSelectedPath(string newValue)
+    public async Task EditSelectedPath()
     {
-        /*
-        if (SelectedItem == null)
-            return;
+        if (SelectedItem == null) return;
 
-        int i = SelectedItem.OriginalIndex; // Pascal Column2
+        var pathOrUri = SelectedItem.FilePathOrUri;
 
-        IsDirty = true;
-        IsLocationEdited = true;
+        if (string.IsNullOrEmpty(pathOrUri)) return;
 
-        switch (_currentPlaylistType)
+        var newValue = await _dialogService.ShowEditDialog(pathOrUri);
+
+        if (string.IsNullOrEmpty(newValue)) return;
+
+        if (SelectedItem is EntryNew entryNew)
         {
-            case PlaylistType.ITunesTsv:
-                EditITunesPath(i, newValue);
-                break;
+            entryNew.FilePathOrUri = newValue;
+        }
+        else if (SelectedItem is EntryItunes entryItunes)
+        {
+            var line = entryItunes.OriginalLine;
 
-            case PlaylistType.M3u:
-                EditM3uPath(i, newValue);
-                break;
+            var cols = line.Split('\t');
 
-            case PlaylistType.Xspf:
-                EditXspfPath(i, newValue);
-                break;
-
-            case PlaylistType.New:
-                EditNewPath(i, newValue);
-                break;
-
-            case PlaylistType.Error:
+            if (cols.Length <= 1)
+            {
+                // end of line?
                 return;
+            }
+
+            if (cols.Length < 31)
+            {
+                Debug.WriteLine($"Error: Wrong column count. Invalid format! {cols.Length}:{line}");
+                StatusTextRight = $"Error: Wrong column count. Invalid format! {cols.Length}:{line}";
+                _currentPlaylistType = PlaylistType.Error;
+                IsBusy = false;
+                return;
+            }
+
+            int columnIndex = 0;
+            var updatedLine = string.Empty;
+            foreach (var col in cols)
+            {
+                if (columnIndex == 30)
+                {
+                    // Update the path.
+                    updatedLine += newValue + '\t';
+                }
+                else
+                {
+                    updatedLine += col + '\t';
+                }
+                columnIndex++;
+            }
+
+            entryItunes.FilePathOrUri = newValue;
+            entryItunes.OriginalLine = updatedLine;// + "\r\n";
+        }
+        else if (SelectedItem is EntryM3u entryM3u)
+        {
+            entryM3u.FilePathOrUri = newValue;
+        }
+        else if (SelectedItem is EntryXspf entryXspf)
+        {
+            entryXspf.FilePathOrUri = newValue;
+
+            if (entryXspf.XElement != null)
+            {
+                var loc = entryXspf.XElement.Element("location");
+                loc?.Value = newValue;
+            }
         }
 
-        // Update UI list
-        SelectedItem.FilePath = newValue;
-        */
+        IsDirty = true;
     }
 
     private bool CanEditSelectedPathExecute()
-    {
-        if (IsBusy)
-        {
-            return false;
-        }
-        if (SelectedItem == null)
-        {
-            return false;
-        }
-        if (Items.Count <= 0)
-        {
-            return false;
-        }
-        if (_currentPlaylistType == PlaylistType.Error)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    private void EditITunesPath(int index, string newValue)
-    {
-        /*
-        var row = RawLines[index].Split('\t');
-
-        if (row.Length >= 31)
-        {
-            row[30] = newValue;
-            RawLines[index] = string.Join("\t", row);
-        }
-        */
-    }
-
-    private void EditM3uPath(int index, string newValue)
-    {
-        //RawLines[index - 1] = newValue;
-    }
-
-    private void EditXspfPath(int index, string newValue)
-    {
-        /*
-        if (_xspfDoc == null)
-            return;
-
-        var tracks = _xspfDoc.Descendants("track").ToList();
-        if (index - 1 >= tracks.Count)
-            return;
-
-        var track = tracks[index - 1];
-        var loc = track.Element("location");
-        loc?.Value = newValue;
-
-        RawLines[index - 1] = newValue;
-        */
-    }
-
-    private void EditNewPath(int index, string newValue)
-    {
-        /*
-        RawLines[index - 1] = newValue;
-        */
-    }
-
-
-    [RelayCommand(CanExecute = nameof(CanCopySelectedPathExecute))]
-    private async Task CopySelectedPath()
-    {
-        /*
-        if (SelectedItem == null)
-            return;
-        var path = SelectedItem.FilePath;
-        try
-        {
-            var local = ConvertUriToLocalPath(path);
-            await _storageService.CopyTextToClipboardAsync(local);
-        }
-        catch
-        {
-            // ignore errors
-        }
-        */
-    }
-
-    private bool CanCopySelectedPathExecute()
     {
         if (IsBusy)
         {
@@ -1402,7 +1200,7 @@ public partial class MainViewModel : ObservableObject
                 songIndex++;
             }
 
-            StatusTextRight = $"{songIndex} tracks processed.";
+            StatusTextRight = $"{songIndex} track(s) processed.";
             IsBusy = false;
 
             // Enable/disable commands
@@ -1428,6 +1226,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+            IsDirty = false;
             ProgressMinimum = 0;
             //ProgressMaximum = 0;
             ProgressValue = 0;
@@ -1712,7 +1511,7 @@ public partial class MainViewModel : ObservableObject
                 StatusTextLeft += $" : BOM";
             }
 
-            StatusTextRight = $"{songIndex} tracks processed.";
+            StatusTextRight = $"{songIndex} track(s) processed.";
             IsBusy = false;
 
             // Enable/disable commands
@@ -1739,6 +1538,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+            IsDirty = false;
             ProgressMinimum = 0;
             //ProgressMaximum = 0;
             ProgressValue = 0;
@@ -1806,7 +1606,7 @@ public partial class MainViewModel : ObservableObject
                 songIndex++;
             }
 
-            StatusTextRight = $"{songIndex} tracks processed.";
+            StatusTextRight = $"{songIndex} track(s) processed.";
             IsBusy = false;
 
             // Enable/disable commands
@@ -1833,6 +1633,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+            IsDirty = false;
             ProgressMinimum = 0;
             //ProgressMaximum = 0;
             ProgressValue = 0;
@@ -2050,7 +1851,6 @@ public partial class MainViewModel : ObservableObject
                 {
                     var line = entryItunes.OriginalLine;
 
-                    // TODO: update if path is edited.
                     var cols = line.Split('\t');
 
                     if (cols.Length <= 1)
@@ -2665,13 +2465,90 @@ public partial class MainViewModel : ObservableObject
 
     #endregion
 
-    #region == Menu Items ==
+    #region == Context Menu Items ==
+
+    [RelayCommand(CanExecute = nameof(CanRemoveSelectedExecute))]
+    public void RemoveSelected(object parameter)
+    {
+        if (parameter is not IList selectedList) return;
+
+        if (selectedList.Count == 0) return;
+
+        var itemsToRemove = selectedList.OfType<Entry>().ToList();
+
+        foreach (var item in itemsToRemove)
+        {
+            if (item is Entry entry)
+            {
+                Items.Remove(entry);
+            }
+        }
+
+        // Reindex
+        for (int i = 0; i < Items.Count; i++)
+        {
+            Items[i].Index = i + 1;
+        }
+
+        IsDirty = true;
+    }
+
+    private bool CanRemoveSelectedExecute(object parameter)
+    {
+        if (IsBusy) return false;
+        if (parameter is not IList items) return false;
+        if (items == null || items.Count == 0) return false;
+        if (Items.Count <= 0) return false;
+        if (_currentPlaylistType == PlaylistType.Error) return false;
+        return true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCopySelectedPathExecute))]
+    private async Task CopySelectedPath()
+    {
+        if (SelectedItem == null) return;
+
+        var path = SelectedItem.FilePathOrUri;
+
+        if (string.IsNullOrEmpty(path)) return;
+
+        try
+        {
+            //var local = ConvertUriToLocalPath(path);
+            await _storageService.CopyTextToClipboardAsync(path);
+        }
+        catch
+        {
+            // ignore errors
+        }
+    }
+
+    private bool CanCopySelectedPathExecute()
+    {
+        if (IsBusy)
+        {
+            return false;
+        }
+        if (SelectedItem == null)
+        {
+            return false;
+        }
+        if (Items.Count <= 0)
+        {
+            return false;
+        }
+        if (_currentPlaylistType == PlaylistType.Error)
+        {
+            return false;
+        }
+        return true;
+    }
+
 
     [RelayCommand]
     private void MoveItemUp()
     {
-        if (SelectedItem is null)
-            return;
+        if (SelectedItem is null) return;
 
         MoveItemUp(SelectedItem);
     }
@@ -2679,8 +2556,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void MoveItemDown()
     {
-        if (SelectedItem is null)
-            return;
+        if (SelectedItem is null) return;
 
         MoveItemDown(SelectedItem);
     }
@@ -2688,8 +2564,7 @@ public partial class MainViewModel : ObservableObject
     public void MoveItemUp(Entry item)
     {
         int index = Items.IndexOf(item);
-        if (index <= 0)
-            return;
+        if (index <= 0) return;
 
         Items.RemoveAt(index);
         Items.Insert(index - 1, item);
@@ -2698,8 +2573,7 @@ public partial class MainViewModel : ObservableObject
 
         for (int i = 0; i < Items.Count; i++)
         {
-            Items[i].Index = i + 1;
-            //Items[i].OriginalIndex = i + 1;
+            Items[i].Index = i;
         }
     }
 
@@ -2716,32 +2590,88 @@ public partial class MainViewModel : ObservableObject
 
         for (int i = 0; i < Items.Count; i++)
         {
-            Items[i].Index = i + 1;
-            //Items[i].OriginalIndex = i + 1;
+            Items[i].Index = i;
         }
     }
 
     [RelayCommand]
-    private void OpenContainingFolder()
+    private async Task OpenContainingFolder()
     {
-        if (SelectedItem == null)
-            return;
-        /*
-        var path = SelectedItem.FilePath;
+        if (SelectedItem == null) return;
+
+        var path = SelectedItem.FilePathOrUri;
+
+        if (string.IsNullOrEmpty(path)) return;
 
         try
         {
             var local = ConvertUriToLocalPath(path);
             var folder = System.IO.Path.GetDirectoryName(local);
 
-            if (folder != null && Directory.Exists(folder))
-                Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+            if (!System.IO.Directory.Exists(folder))
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                return;
+            }
+
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                return;
+            }
+
+            var mainWin = desktop.MainWindow;
+            var launcher = TopLevel.GetTopLevel(mainWin)?.Launcher;
+            if (launcher is null)
+            {
+                return;
+            }
+
+            // Just show foloder in Finder. Selecting file is not supported by Avalonia Launcher on macOS.  
+            if (await launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(folder)))
+            {
+                // ok
+            }
+            else
+            {
+                // TODO: show error message?
+                // This failes in Debug session when the app is attached VSCode from Snap packages on Linux. 
+            }
         }
         catch
         {
             // ignore errors
         }
-        */
+    }
+
+    #endregion
+
+    #region == Other Main Menu Items ==
+
+    [RelayCommand]
+    private async Task ShowAbout()
+    {
+        await _dialogService.ShowAboutDialog("About Playlist Editor", this);
+
+    }
+
+    [RelayCommand]
+    private void VisitProjectPage()
+    {
+        var uri = new Uri("https://github.com/torum/PlaylistEditor");
+
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            return;
+        }
+
+        var mainWin = desktop.MainWindow;
+
+        var launcher = TopLevel.GetTopLevel(mainWin)?.Launcher;
+        launcher?.LaunchUriAsync(uri);
     }
 
     #endregion

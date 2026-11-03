@@ -1,46 +1,42 @@
-﻿using PlaylistEditorX.Models;
-using PlaylistEditorX.Services;
-//using PlaylistEditorX.Views.Dialogs;
-using System.Collections.ObjectModel;
-using System.Globalization;
+﻿using PlaylistEditorX.ViewModels;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PlaylistEditorX.Services;
 
-internal sealed class DialogService : IDialogService
-{
-    public sealed record AddToDialogResult(string PlaylistName, bool AsNew);
-
+public sealed class DialogService : IDialogService
+{    
     public DialogService()
     {
         //
     }
 
+    public bool IsDialogOpen { get; private set; }
+
     public async Task<bool> ShowConfirmAsync(string title, string message)
     {
+        if (IsDialogOpen) return false;
+        
+        IsDialogOpen = true;
+
         var dialog = new FluentAvalonia.UI.Controls.FAContentDialog
         {
             Title = title,
             IsPrimaryButtonEnabled = true,
-            PrimaryButtonText = "OK",//MPDCtrlX.Properties.Resources.Dialog_Ok,
+            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
             DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
             IsSecondaryButtonEnabled = false,
-            CloseButtonText = "Cancel",//MPDCtrlX.Properties.Resources.Dialog_CancelClose,
+            CloseButtonText = "Cancel",//PlaylistEditorX.Properties.Resources.Dialog_CancelClose,
             Content = message
-            /*
-            Content = new Views.Dialogs.Keybindings()
-            {
-                //DataContext = new DialogViewModel()
-            }
-            */
         };
 
         var result = await dialog.ShowAsync();
 
+        IsDialogOpen = false;
+
         if (result == FluentAvalonia.UI.Controls.FAContentDialogResult.Primary)
         {
             return true;
-
         }
         else
         {
@@ -48,74 +44,118 @@ internal sealed class DialogService : IDialogService
         }
     }
 
-    public async Task<AddToDialogResult?> ShowAddToDialog(ViewModels.MainViewModel vm)
+    // Returns null if the dialog is already open or if the user cancels the dialog.
+    public async Task<string?> ShowEditDialog(string initialValue)
     {
-        if (vm is null)
-        {
-            return null;
-        }
-        return await Task.FromResult<AddToDialogResult?>(null);
+        if (IsDialogOpen) return null;
 
-        /*
+        IsDialogOpen = true;
+
         var dialog = new FluentAvalonia.UI.Controls.FAContentDialog
         {
-            Title = MPDCtrlX.Properties.Resources.Dialog_Title_SelectPlaylist,
+            Title = "Edit Dialog",
             IsPrimaryButtonEnabled = true,
-            PrimaryButtonText = MPDCtrlX.Properties.Resources.Dialog_Ok,
+            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
             DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
             IsSecondaryButtonEnabled = false,
-            CloseButtonText = MPDCtrlX.Properties.Resources.Dialog_CancelClose,
-            Content = new Views.Dialogs.SaveToDialog()
+            CloseButtonText = "Cancel",//PlaylistEditorX.Properties.Resources.Dialog_CancelClose,
+            Content = new Views.EditDialog()
             {
                 //DataContext = new DialogViewModel()
             }
         };
 
-        if (dialog.Content is not SaveToDialog dialogContent)
+        if (dialog.Content is not Views.EditDialog dlg)
         {
+            IsDialogOpen = false;
             return null;
         }
 
-        // Sort
-        CultureInfo ci = CultureInfo.CurrentCulture;
-        StringComparer comp = StringComparer.Create(ci, true);
-
-        //asdf.PlaylistListBox.ItemsSource = vm?.Playlists;
-        //asdf.PlaylistListBox.ItemsSource = new ObservableCollection<Playlist>(vm.Playlists.OrderBy(x => x.Name, comp));
-        dialogContent.PlaylistComboBox.ItemsSource = new ObservableCollection<Playlist>(vm.Playlists.OrderBy(x => x.Name, comp));
+        dlg.PathOrUriTextBox.Text = initialValue;
 
         var result = await dialog.ShowAsync();
 
-        if (result == FluentAvalonia.UI.Controls.FAContentDialogResult.Primary && dialog.Content is Views.Dialogs.SaveToDialog dlg)
+        if (result != FluentAvalonia.UI.Controls.FAContentDialogResult.Primary)
         {
-
-            if (dlg.CreateNewCheckBox.IsChecked is true)
-            {
-                var str = dlg.TextBoxPlaylistName.Text ?? string.Empty;
-
-                if (!string.IsNullOrEmpty(str.Trim()))
-                {
-                    //vm?.QueueSaveToDialog_Execute(str.Trim());
-                    return new AddToDialogResult(str.Trim(), true);
-                }
-            }
-            else
-            {
-                var plselitem = dlg.PlaylistComboBox.SelectedItem;
-
-                if (plselitem is Models.Playlist pl)
-                {
-                    if (!string.IsNullOrWhiteSpace(pl.Name))
-                    {
-                        //vm?.QueueSaveToDialog_Execute(pl.Name.Trim());
-                        return new AddToDialogResult(pl.Name, false);
-                    }
-
-                }
-            }
+            IsDialogOpen = false;
+            return null;
         }
 
+        var ret = dlg.PathOrUriTextBox.Text;
+        if (ret is not null)
+        {
+            IsDialogOpen = false;
+            return ret;
+        }
+
+        IsDialogOpen = false;
         return null;
-        */
+    }
+
+    // Returns null if the dialog is already open or if the user cancels the dialog.
+    public async Task<(string?, string?)> ShowFindAndReplaceDialog()
+    {
+        if (IsDialogOpen) return (null, null);
+
+        IsDialogOpen = true;
+
+        var dialog = new FluentAvalonia.UI.Controls.FAContentDialog
+        {
+            Title = "Find and Replace Dialog",
+            IsPrimaryButtonEnabled = true,
+            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
+            DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
+            IsSecondaryButtonEnabled = false,
+            CloseButtonText = "Cancel",//PlaylistEditorX.Properties.Resources.Dialog_CancelClose,
+            Content = new Views.FindAndReplaceDialog()
+            {
+                //DataContext = new DialogViewModel()
+            }
+        };
+
+        if (dialog.Content is not Views.FindAndReplaceDialog dlg)
+        {
+            IsDialogOpen = false;
+            return (null, null);
+        }
+
+        var result = await dialog.ShowAsync();
+
+        if (result != FluentAvalonia.UI.Controls.FAContentDialogResult.Primary)
+        {
+            IsDialogOpen = false;
+            return (null, null);
+        }
+
+        var findText = dlg.FindTextBox.Text;
+        var replaceText = dlg.ReplaceTextBox.Text;
+        if ((findText is not null) && (replaceText is not null))
+        {
+            IsDialogOpen = false;
+            return (findText, replaceText);
+        }
+
+        IsDialogOpen = false;
+        return (null, null);
+    }
+
+    public async Task ShowAboutDialog(string title, MainViewModel viewModel)
+    {
+        if (IsDialogOpen) return;
+        IsDialogOpen = true;
+        var dialog = new FluentAvalonia.UI.Controls.FAContentDialog
+        {
+            Title = title,
+            IsPrimaryButtonEnabled = true,
+            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
+            DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
+            IsSecondaryButtonEnabled = false,
+            Content = new Views.AboutDialog()
+            {
+                DataContext = viewModel
+            }
+        };
+        await dialog.ShowAsync();
+        IsDialogOpen = false;
     }
 }

@@ -13,6 +13,9 @@ public abstract partial class Entry : ObservableObject
     }
 
     [ObservableProperty]
+    public partial bool IsDirty { get; set; }
+
+    [ObservableProperty]
     public partial string? FilePathOrUri { get; set; }
 
     [NotifyPropertyChangedFor(nameof(IndexPlusOne))]

@@ -9,6 +9,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using PlaylistEditorX.Models;
+using PlaylistEditorX.Services;
 using PlaylistEditorX.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,8 @@ namespace PlaylistEditorX.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly Services.IConfigurationService? _configurationService;
+    private readonly Services.IConfigurationService _configurationService;
+    private readonly Services.IDialogService _dialogService;
     private readonly DataFormat<List<Entry>> _nodeFormat = DataFormat.CreateInProcessFormat<List<Entry>>("PlaylistItemFormat");
     private InsertionLineAdorner? _insertionLine;
     private AdornerLayer? _adornerLayer;
@@ -39,11 +41,14 @@ public partial class MainWindow : Window
     // Parameterless constructor for XAML previewer and designer.
     public MainWindow()
     {
+        _configurationService = new Services.ConfigurationService();
+        _dialogService = new Services.DialogService();
         InitializeComponent();
     }
-    public MainWindow(Services.IConfigurationService configurationService) : this()
+    public MainWindow(Services.IConfigurationService configurationService, Services.IDialogService dialogService) : this()
     {
         _configurationService = configurationService;
+        _dialogService = dialogService;
 
         //InitializeComponent();
 
@@ -462,7 +467,33 @@ public partial class MainWindow : Window
 
     private async void Window_Closing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
     {
-        Debug.WriteLine("OnClosing");
+        if (DataContext is not MainViewModel _mainViewModel)
+        {
+            return;
+        }
+
+        Debug.WriteLine($"Window_Closing: IsDirty = {_mainViewModel.IsDirty}");
+
+        if (_dialogService.IsDialogOpen)
+        {
+            Debug.WriteLine("Window_Closing: Dialog is open, canceling close.");
+            e.Cancel = true;
+            return;
+        }
+
+        if (_mainViewModel.IsDirty)
+        {
+            e.Cancel = true;
+            var confirm = await _dialogService.ShowConfirmAsync(
+                "Playlist has been changed",
+                "Do you wish to discard changes and close?"
+            );
+            if (!confirm)
+            {
+                return;
+            }
+        }
+
         this.Closing -= Window_Closing;
 
         if (_isClosing) return;

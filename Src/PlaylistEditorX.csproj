@@ -35,4 +35,16 @@
 	  <PackageReference Include="FluentAvaloniaUI" Version="3.1.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\AboutDialog.axaml.cs">
+      <DependentUpon>AboutDialog.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Views\EditDialog.axaml.cs">
+      <DependentUpon>EditDialog.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Views\FindAndReplaceDialog.axaml.cs">
+      <DependentUpon>FindAndReplaceDialog.axaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

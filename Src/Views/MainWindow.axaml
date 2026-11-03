@@ -5,9 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 		xmlns:fa="using:FluentAvalonia.UI.Controls"
+        xmlns:ia="using:Xaml.Behaviors.Interactions.Animated"
         x:Class="PlaylistEditorX.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         xmlns:models="using:PlaylistEditorX.Models"
+        MinWidth="600" MinHeight="400"
         WindowDecorations="Full"
 		ExtendClientAreaToDecorationsHint="True"
         Title="PlaylistEditorX">
@@ -32,7 +34,8 @@
 
         <Grid Grid.Row="0" ColumnDefinitions="*">
 
-            <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" WindowDecorationProperties.ElementRole="User">
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" 
+                        WindowDecorationProperties.ElementRole="User">
 
                 <Image x:Name="ImageAppIcon" Width="24" Height="24" Margin="6,0,3,0" Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Center" HorizontalAlignment="Center"
                         WindowDecorationProperties.ElementRole="TitleBar"/>
@@ -55,22 +58,31 @@
                     </MenuItem>
 
                     <MenuItem Header="_Edit">
-                        <MenuItem Header="Remove Selected" Command="{Binding RemoveSelectedCommand}" />
-                        <MenuItem Header="Copy Selected Path" Command="{Binding CopySelectedPathCommand}" />
+                        <MenuItem Header="Find &amp; Replace" Command="{Binding FindAndReplaceCommand}" />
+                        <Separator />
+                        <MenuItem Header="Copy Path" Command="{Binding CopySelectedPathCommand}" />
                         <MenuItem Header="Edit Path/URI" Command="{Binding EditSelectedPathCommand}" />
-                        <MenuItem Header="Replace..." Command="{Binding ReplaceAllCommand}" />
+                        <MenuItem Header="Try Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" IsVisible="False" />
+                        <Separator />
+                        <MenuItem Header="Remove" Command="{Binding RemoveSelectedCommand}" CommandParameter="{Binding #PlaylistListBox.SelectedItems}" />
                     </MenuItem>
 
                     <MenuItem Header="_Tools" IsVisible="False">
                         <MenuItem Header="Convert to M3U" Command="{Binding ConvertToM3uCommand}" />
                         <MenuItem Header="Convert to XSPF" Command="{Binding ConvertToXspfCommand}" />
                     </MenuItem>
+
+                    <MenuItem Header="_Help">
+                        <MenuItem Header="About" Command="{Binding ShowAboutCommand}" />
+                        <MenuItem Header="Visit Project Page" Command="{Binding VisitProjectPageCommand}" />
+                    </MenuItem>
                 </Menu>
             </StackPanel>      
             
-            <Border Grid.Row="0" Grid.Column="0" WindowDecorationProperties.ElementRole="TitleBar" Padding="12,6,12,6" VerticalAlignment="Center" HorizontalAlignment="Center" CornerRadius="6" Margin="130,2,130,0"
-                        Background="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource LayerFillColorDefaultBrush}">
-            <TextBlock Text="{Binding WindowTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" />
+            <Border Grid.Row="0" Grid.Column="0" Padding="12,6,12,6" VerticalAlignment="Center" HorizontalAlignment="Center" CornerRadius="6" Margin="130,2,130,0"
+                        Background="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource LayerFillColorDefaultBrush}"
+                        WindowDecorationProperties.ElementRole="TitleBar">
+                <TextBlock Text="{Binding WindowTitle, Mode=OneWay}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" />
             </Border>
         </Grid>
 
@@ -100,6 +112,51 @@
 						    <VirtualizingStackPanel/>
 					    </ItemsPanelTemplate>
 				    </ListBox.ItemsPanel>
+                    <ListBox.Resources>
+					    <!-- Edit: Added VerticalScrollViewerAnimatedBehavior. -->
+					    <ControlTheme x:Key="{x:Type ListBox}" TargetType="ListBox">
+						    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+						    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+						    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+						    <Setter Property="BorderThickness" Value="{DynamicResource ListBoxBorderThemeThickness}" />
+						    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+						    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+						    <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
+						    <Setter Property="ScrollViewer.IsScrollInertiaEnabled" Value="True" />
+						    <Setter Property="Template">
+							    <ControlTemplate>
+								    <Border Name="border"
+										    ClipToBounds="{TemplateBinding ClipToBounds}"
+										    Background="{TemplateBinding Background}"
+										    BorderBrush="{TemplateBinding BorderBrush}"
+										    BorderThickness="{TemplateBinding BorderThickness}"
+										    CornerRadius="{TemplateBinding CornerRadius}">
+									    <ScrollViewer Name="PART_ScrollViewer"
+												  
+												      VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}"
+												      HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+												      HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+												      VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+												      IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+												      IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+												      IsDeferredScrollingEnabled="{TemplateBinding (ScrollViewer.IsDeferredScrollingEnabled)}"
+												      AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+												      BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
+										
+										    <Interaction.Behaviors>
+											    <ia:VerticalScrollViewerAnimatedBehavior/>
+										    </Interaction.Behaviors>
+										
+										    <ItemsPresenter Name="PART_ItemsPresenter"
+														    ItemsPanel="{TemplateBinding ItemsPanel}"
+														    Margin="{TemplateBinding Padding}"/>
+									    </ScrollViewer>
+								    </Border>
+							    </ControlTemplate>
+						    </Setter>
+					    </ControlTheme>
+					
+				    </ListBox.Resources>
                     <ListBox.Styles>
                         <Style Selector="ListBoxItem" x:DataType="models:Entry">
 						    <Setter Property="Padding" Value="6"/>
@@ -107,12 +164,16 @@
                             <Setter Property="ContextFlyout">
 							    <Setter.Value>
                                     <MenuFlyout>
-                                        <MenuItem Header="Copy Selected Path" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).CopySelectedPathCommand, Mode=OneWay}" CommandParameter="{Binding $parent[ListBox].SelectedItem, Mode=OneWay}"/>
-                                        <MenuItem Header="Remove Selected" />
-                                        <MenuItem Header="Edit Path/URI" />
-                                        <MenuItem Header="Open Containing Folder"
-                                                    Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).OpenContainingFolderCommand, Mode=OneWay}" CommandParameter="{Binding $parent[ListBox].SelectedItem, Mode=OneWay}" />
-						            </MenuFlyout>
+                                        <MenuItem Header="Copy Path" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).CopySelectedPathCommand, Mode=OneWay}"/>
+                                        <MenuItem Header="Edit Path/URI" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).EditSelectedPathCommand, Mode=OneWay}" />
+                                        <MenuItem Header="Try Open Containing Folder" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).OpenContainingFolderCommand, Mode=OneWay}" IsVisible="False"/>
+                                        <Separator />
+                                        <MenuItem Header="Move Up" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).MoveItemUpCommand, Mode=OneWay}" />
+                                        <MenuItem Header="Move Down" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).MoveItemDownCommand, Mode=OneWay}" />
+                                        <Separator />
+                                        <MenuItem Header="Remove" Command="{Binding Path=$parent[ListBox].((vm:MainViewModel)DataContext).RemoveSelectedCommand, Mode=OneWay}"
+                                                  CommandParameter="{Binding Path=$parent[ListBox].SelectedItems}"/>
+                                    </MenuFlyout>
 							    </Setter.Value>
 						    </Setter>
                         </Style>
@@ -123,9 +184,6 @@
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="4">
                                 <TextBlock Grid.Column="0" Text="{Binding IndexPlusOne, Mode=OneWay}" Margin="6,6,12,6" />
                                 <TextBlock Grid.Column="1" Text="{Binding FilePathOrUri, Mode=OneWay}" Margin="6,6,12,6" />
-                                <!--
-                                <TextBlock Grid.Column="2" Text="{Binding OriginalIndex}" IsVisible="False"/>
-                                -->
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

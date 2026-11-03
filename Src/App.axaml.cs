@@ -49,7 +49,7 @@ public partial class App : Application
             Services.StorageService storageService = new();
             Services.DialogService dialogService = new();
 
-            desktop.MainWindow = new MainWindow(configurationService)
+            desktop.MainWindow = new MainWindow(configurationService, dialogService)
             {
                 DataContext = new MainViewModel(storageService, dialogService, configurationService)
             };
