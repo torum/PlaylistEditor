@@ -18,14 +18,14 @@ title: Playlist Editor
 # PlaylistEditor
 
 
-<img width="48" src="https://github.com/torum/PlaylistEditor/blob/main/Src/Assets/PlaylistEditorLogo.png">
+<img width="48" src="https://github.com/torum/PlaylistEditor/blob/7e4454e9a59a73f1340545cb3dd47f322555ea44/Src/Assets/PlaylistEditorLogo.png">
 
 A simple, cross-platform desktop playlist editor and converter. It allows you to open iTunes TXT or M3U or XSPF, edit and save them as M3U or XSPF playlists. The aim is to ease the transfering of a media library from one computer to another.  
 
 This project is a direct port of [Playlist-editor](https://github.com/torum/Playlist-editor), which was originally developed in 2018 using [ObjectPascal/Lazarus](https://www.lazarus-ide.org/). This modern iteration has been rebuilt using C#/.NET and [Avalonia UI](https://github.com/AvaloniaUI/Avalonia).
 
 ### Screenshot
-<img width="800" alt="Playlist Editor" src="https://github.com/torum/PlaylistEditor/blob/main/docs/images/PlaylistEditorScreenshot.png">
+<img width="800" alt="Playlist Editor" src="https://github.com/torum/PlaylistEditor/blob/7e4454e9a59a73f1340545cb3dd47f322555ea44/docs/images/PlaylistEditorScreenshot.png">
 
 ### Format convert
 - .txt(iTunes TSV) -> .m3u/.xspf 
