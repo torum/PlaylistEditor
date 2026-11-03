@@ -1,4 +1,5 @@
 ﻿using PlaylistEditor.ViewModels;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -129,7 +130,7 @@ public sealed class DialogService : IDialogService
 
         var findText = dlg.FindTextBox.Text;
         var replaceText = dlg.ReplaceTextBox.Text;
-        if ((findText is not null) && (replaceText is not null))
+        if (!string.IsNullOrEmpty(findText) || !string.IsNullOrEmpty(replaceText))
         {
             IsDialogOpen = false;
             return (findText, replaceText);

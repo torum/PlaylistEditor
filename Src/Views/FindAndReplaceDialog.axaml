@@ -15,8 +15,9 @@
                     <TextBlock Text="Usage examples:" Margin="0,24,0,0" />
                     <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">1. C:\Users\OLD-USER\ -> C:\Users\NEW-USER\</Run><Run xml:space="preserve"> (Simple replacements)</Run></TextBlock>
                     <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">2. C:\Users\USER\ -> (empty text)</Run><Run xml:space="preserve"> (Make them relative path)</Run></TextBlock>
-                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">3. file:///C:/Users/me/Music/iTunes/iTunes%20Media/Music/ -> file://192.168.3.123/MyMusic/</Run><Run xml:space="preserve"> (A simple replacement)</Run></TextBlock>
-                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">4. C:\Users\me\Music\ -> /home/me/Music/</Run><Run xml:space="preserve"> (Replace base path and change Windows path delimiter "\" to Unix path delimiter "/")</Run></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">3. (empty text) -> C:\Users\USER\</Run><Run xml:space="preserve"> (Make them full path)</Run></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">4. file:///C:/Users/me/Music/iTunes/iTunes%20Media/Music/ -> file://192.168.3.123/MyMusic/</Run><Run xml:space="preserve"> (A simple replacement)</Run></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run FontWeight="SemiBold">5. C:\Users\me\Music\ -> /home/me/Music/</Run><Run xml:space="preserve"> (Replace base path and change Windows path delimiter "\" to Unix path delimiter "/")</Run></TextBlock>
                 </StackPanel>      
             </ScrollViewer>
         </StackPanel>

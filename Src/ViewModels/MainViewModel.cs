@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Shapes;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -390,156 +391,60 @@ public partial class MainViewModel : ObservableObject
 
     #region == Path Conversion ==
 
-    private static string UrlEncode(string s)
-    {
-        var allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:/~";
-        var sb = new StringBuilder();
-
-        foreach (var ch in s)
-        {
-            if (allowed.Contains(ch))
-            {
-                sb.Append(ch);
-            }
-            else
-            {
-                sb.Append('%');
-                sb.Append(((int)ch).ToString("X2", CultureInfo.InvariantCulture));
-            }
-        }
-
-        return sb.ToString();
-    }
-
-    private static string UrlDecode(string s)
-    {
-        var sb = new StringBuilder();
-
-        for (int i = 0; i < s.Length; i++)
-        {
-            if (s[i] == '%' && i + 2 < s.Length)
-            {
-                var hex = s.Substring(i + 1, 2);
-                if (byte.TryParse(hex, NumberStyles.HexNumber, null, out var value))
-                {
-                    sb.Append((char)value);
-                    i += 2;
-                    continue;
-                }
-            }
-
-            sb.Append(s[i]);
-        }
-
-        return sb.ToString();
-    }
-
     private static string ConvertUriToLocalPath(string strPath)
     {
-        string s = strPath;
+        if (string.IsNullOrEmpty(strPath)) return strPath ?? string.Empty;
 
-        if (s.StartsWith("file:///", StringComparison.OrdinalIgnoreCase))
+        // Handle legacy Mac paths if they exist in the path. These are not standard URIs, but some older playlists may contain them.
+        if (strPath.StartsWith("file:///Macintosh HD:", StringComparison.OrdinalIgnoreCase))
         {
-            s = s.Replace("file:///", "");
-
-            if (s.Contains(":/"))
-            {
-                // Windows drive letter
-                s = s.Replace("/", "\\");
-            }
-            else
-            {
-                // Linux absolute path
-                s = "/" + s;
-            }
-        }
-        else if (s.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
-        {
-            // Windows UNC
-            s = s.Replace("file://", "\\\\");
-            s = s.Replace("/", "\\");
+            string macPath = strPath.Replace("file:///", "");
+            return Uri.UnescapeDataString(macPath).Replace("/", ":");
         }
 
-        return UrlDecode(s);
+        // Check if it is a valid absolute URI (e.g., starts with file://, http://, etc.)
+        if (Uri.TryCreate(strPath, UriKind.Absolute, out Uri? uri) && uri != null)
+        {
+            // If it's a file URI, LocalPath returns the OS-native path
+            if (uri.IsFile)
+            {
+                return uri.LocalPath;
+            }
+
+            return strPath;
+        }
+
+        // Fallback: If it's a relative URI, just decode the segments safely
+        return Uri.UnescapeDataString(strPath).Replace("/", System.IO.Path.DirectorySeparatorChar.ToString());
     }
 
-    private static string ConvertLocalPathToUri(string strUri)
+    private static string ConvertLocalPathToUri(string path)
     {
-        // return new Uri(path, UriKind.Absolute).ToString();
+        if (string.IsNullOrEmpty(path)) return path;
 
-        if (string.IsNullOrEmpty(strUri) || strUri.Length < 2)
-            return strUri;
-
-        string s = strUri;
-
-        // Windows UNC: \\server\share
-        if (s.StartsWith("\\\\", StringComparison.OrdinalIgnoreCase))
+        // Handle legacy Mac paths manually since native .NET URI doesn't support them
+        if (path.StartsWith("Macintosh HD:", StringComparison.OrdinalIgnoreCase))
         {
-            s = s.Replace("\\", "/");
-            s = UrlEncode(s);
-            return "file:" + s;
+            string macPath = path.Replace("Macintosh HD:", "").Replace(":", "/");
+            // Only escape the path segments, not the scheme
+            return "file:///" + Uri.EscapeDataString(macPath).Replace("%2F", "/");
         }
 
-        // Windows relative path: \folder\file
-        if (s.StartsWith("\\", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            s = s.Replace("\\", "/");
-            return UrlEncode(s);
-        }
+            // Try creating a native URI. Handles C:\path, \\server\share, and /unix/path perfectly.
+            if (Uri.TryCreate(path, UriKind.Absolute, out Uri? uri) && uri != null)
+            {
+                return uri.AbsoluteUri;
+            }
 
-        // macOS iTunes: Macintosh HD:Users:Toru:Music:...
-        if (s.StartsWith("Macintosh HD:", StringComparison.OrdinalIgnoreCase))
+            // If it's a relative path, escape it properly for XSPF
+            return Uri.EscapeDataString(path.Replace("\\", "/")).Replace("%2F", "/");
+        }
+        catch
         {
-            s = s.Replace("Macintosh HD:", "");
-            s = s.Replace(":", "/");
-            s = UrlEncode(s);
-            return "file:///" + s;
+            return path;
         }
-
-        // Windows drive letter: C:\path
-        if (s.Length >= 3 && s[1] == ':' && s.Contains(@"\\", StringComparison.OrdinalIgnoreCase))
-        {
-            s = s.Replace("\\", "/");
-            s = UrlEncode(s);
-            return "file:///" + s;
-        }
-
-        // Windows relative path with backslashes
-        if (s.Contains(@"\\", StringComparison.OrdinalIgnoreCase))
-        {
-            s = s.Replace("\\", "/");
-            return UrlEncode(s);
-        }
-
-        // Already a URI
-        if (s.Contains("://") || s.Contains(":/") || s.Contains("//") || s.Contains('#', StringComparison.OrdinalIgnoreCase))
-        {
-            return s;
-        }
-
-        // Unix absolute path: /home/user/file
-        if (s.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-        {
-            s = "file://" + s;
-            return UrlEncode(s);
-        }
-
-        // Unix relative path or relative URI
-        return UrlEncode(s);
-    }
-
-    private static string ConvertMacPathToUnixPath(string strUri)
-    {
-        string s = strUri;
-
-        if (s.StartsWith("Macintosh HD:", StringComparison.OrdinalIgnoreCase))
-        {
-            s = s.Replace("Macintosh HD:", "");
-            s = s.Replace(":", "/");
-            s = "/" + s;
-        }
-
-        return s;
     }
 
     #endregion
@@ -782,9 +687,11 @@ public partial class MainViewModel : ObservableObject
     {
         var (findText, replaceText) = await _dialogService.ShowFindAndReplaceDialog();
 
-        if (string.IsNullOrEmpty(findText)) return; // Don't check for whitespace, as user may want to replace with empty string.
+        // Don't check each separately for empty or whitespace, as user may want to replace with empty string.
+        findText ??= string.Empty;
+        replaceText ??= string.Empty;
 
-        if (replaceText is null) return; // Don't check for empty or whitespace, as user may want to replace with empty string.
+        if (string.IsNullOrEmpty(findText) && string.IsNullOrEmpty(replaceText)) return;
 
         FindAndReplaceAll(findText, replaceText);
     }
@@ -800,8 +707,8 @@ public partial class MainViewModel : ObservableObject
     public void FindAndReplaceAll(string find, string replace)
     {
         if (IsBusy) return;
-        if (string.IsNullOrEmpty(find)) return;// Don't check for whitespace, as user may want to replace with empty string.
-        if (replace is null) return;// Don't check for empty or whitespace, as user may want to replace with empty string.
+
+        if (string.IsNullOrEmpty(find) && string.IsNullOrEmpty(replace)) return;
 
         IsBusy = true;
         StatusTextRight = "Replacing...";
@@ -815,7 +722,17 @@ public partial class MainViewModel : ObservableObject
                 var originalValue = item.FilePathOrUri;
                 if (originalValue is null) continue;
 
-                var newValue = originalValue.Replace(find, replace, StringComparison.CurrentCulture);
+                string newValue;
+                if (string.IsNullOrEmpty(find) && !string.IsNullOrEmpty(replace))
+                {
+                    // Make full path.
+                    newValue = replace + originalValue;
+                }
+                else
+                {
+                    // Simple replacement.
+                    newValue = originalValue.Replace(find, replace, StringComparison.CurrentCulture);
+                }
 
                 if (item is EntryNew entryNew)
                 {
@@ -1022,7 +939,7 @@ public partial class MainViewModel : ObservableObject
             return false;
         }
 
-        if ((_currentPlaylistType == PlaylistType.New) && !IsDirty)
+        if ((_currentPlaylistType == PlaylistType.New) && Items.Count == 0)
         {
             return false;
         }
