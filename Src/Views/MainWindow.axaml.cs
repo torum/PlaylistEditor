@@ -8,9 +8,9 @@ using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using PlaylistEditorX.Models;
-using PlaylistEditorX.Services;
-using PlaylistEditorX.ViewModels;
+using PlaylistEditor.Models;
+using PlaylistEditor.Services;
+using PlaylistEditor.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,7 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace PlaylistEditorX.Views;
+namespace PlaylistEditor.Views;
 
 public partial class MainWindow : Window
 {
@@ -52,7 +52,7 @@ public partial class MainWindow : Window
 
         //InitializeComponent();
 
-        Bitmap bitmap = new(AssetLoader.Open(new Uri("avares://PlaylistEditorX/Assets/PlaylistEditorX.ico")));
+        Bitmap bitmap = new(AssetLoader.Open(new Uri("avares://PlaylistEditor/Assets/PlaylistEditor.ico")));
         this.ImageAppIcon.Source = bitmap;
 
         var mw = _configurationService.CurrentConfiguration.MainWindow;

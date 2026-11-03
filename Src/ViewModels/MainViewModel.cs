@@ -6,7 +6,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentAvalonia.UI.Controls;
-using PlaylistEditorX.Models;
+using PlaylistEditor.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ using System.Xml.Linq;
 #pragma warning disable CA1822 // Mark members as static
 #pragma warning disable IDE0305
 
-namespace PlaylistEditorX.ViewModels;
+namespace PlaylistEditor.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {

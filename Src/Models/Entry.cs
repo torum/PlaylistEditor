@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace PlaylistEditorX.Models;
+namespace PlaylistEditor.Models;
 
 public abstract partial class Entry : ObservableObject
 {

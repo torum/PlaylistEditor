@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml.Linq;
 
-namespace PlaylistEditorX.Models;
+namespace PlaylistEditor.Models;
 
 public class EntryXspf : Entry
 {

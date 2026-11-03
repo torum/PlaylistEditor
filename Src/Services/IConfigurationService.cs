@@ -1,8 +1,8 @@
-﻿using PlaylistEditorX.Models;
+﻿using PlaylistEditor.Models;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
-namespace PlaylistEditorX.Services;
+namespace PlaylistEditor.Services;
 
 public interface IConfigurationService
 {

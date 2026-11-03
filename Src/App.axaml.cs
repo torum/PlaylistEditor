@@ -2,8 +2,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using PlaylistEditorX.ViewModels;
-using PlaylistEditorX.Views;
+using PlaylistEditor.ViewModels;
+using PlaylistEditor.Views;
 using System;
 using System.Globalization;
 using System.IO;
@@ -12,11 +12,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PlaylistEditorX;
+namespace PlaylistEditor;
 
 public partial class App : Application
 {
-    public const string AppName = "PlaylistEditorX";
+    public const string AppName = "PlaylistEditor";
     private const string AppDeveloper = "torum";
 
     // Error log file path.

@@ -1,8 +1,8 @@
-﻿using PlaylistEditorX.ViewModels;
+﻿using PlaylistEditor.ViewModels;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace PlaylistEditorX.Services;
+namespace PlaylistEditor.Services;
 
 public sealed class DialogService : IDialogService
 {    
@@ -23,10 +23,10 @@ public sealed class DialogService : IDialogService
         {
             Title = title,
             IsPrimaryButtonEnabled = true,
-            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
+            PrimaryButtonText = "OK",//PlaylistEditor.Properties.Resources.Dialog_Ok,
             DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
             IsSecondaryButtonEnabled = false,
-            CloseButtonText = "Cancel",//PlaylistEditorX.Properties.Resources.Dialog_CancelClose,
+            CloseButtonText = "Cancel",//PlaylistEditor.Properties.Resources.Dialog_CancelClose,
             Content = message
         };
 
@@ -55,10 +55,10 @@ public sealed class DialogService : IDialogService
         {
             Title = "Edit Dialog",
             IsPrimaryButtonEnabled = true,
-            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
+            PrimaryButtonText = "OK",//PlaylistEditor.Properties.Resources.Dialog_Ok,
             DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
             IsSecondaryButtonEnabled = false,
-            CloseButtonText = "Cancel",//PlaylistEditorX.Properties.Resources.Dialog_CancelClose,
+            CloseButtonText = "Cancel",//PlaylistEditor.Properties.Resources.Dialog_CancelClose,
             Content = new Views.EditDialog()
             {
                 //DataContext = new DialogViewModel()
@@ -103,10 +103,10 @@ public sealed class DialogService : IDialogService
         {
             Title = "Find and Replace Dialog",
             IsPrimaryButtonEnabled = true,
-            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
+            PrimaryButtonText = "OK",//PlaylistEditor.Properties.Resources.Dialog_Ok,
             DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
             IsSecondaryButtonEnabled = false,
-            CloseButtonText = "Cancel",//PlaylistEditorX.Properties.Resources.Dialog_CancelClose,
+            CloseButtonText = "Cancel",//PlaylistEditor.Properties.Resources.Dialog_CancelClose,
             Content = new Views.FindAndReplaceDialog()
             {
                 //DataContext = new DialogViewModel()
@@ -147,7 +147,7 @@ public sealed class DialogService : IDialogService
         {
             Title = title,
             IsPrimaryButtonEnabled = true,
-            PrimaryButtonText = "OK",//PlaylistEditorX.Properties.Resources.Dialog_Ok,
+            PrimaryButtonText = "OK",//PlaylistEditor.Properties.Resources.Dialog_Ok,
             DefaultButton = FluentAvalonia.UI.Controls.FAContentDialogButton.Primary,
             IsSecondaryButtonEnabled = false,
             Content = new Views.AboutDialog()

@@ -5,7 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 
-namespace PlaylistEditorX.Services;
+namespace PlaylistEditor.Services;
 
 public interface IStorageService
 {

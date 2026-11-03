@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 
-namespace PlaylistEditorX.Models;
+namespace PlaylistEditor.Models;
 
 public abstract class Playlist
 {

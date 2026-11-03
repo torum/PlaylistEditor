@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PlaylistEditorX.Models;
+namespace PlaylistEditor.Models;
 
 //time(sec),display name
 //#EXTINF:254,Artist - SongTitle

@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using PlaylistEditorX.ViewModels;
-using PlaylistEditorX.Services;
-using static PlaylistEditorX.Services.DialogService;
+using PlaylistEditor.ViewModels;
+using PlaylistEditor.Services;
+using static PlaylistEditor.Services.DialogService;
 
-namespace PlaylistEditorX.Services;
+namespace PlaylistEditor.Services;
 
 public interface IDialogService
 {

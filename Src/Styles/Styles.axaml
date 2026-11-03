@@ -27,10 +27,10 @@
 			<StaticResource x:Key="CardStrokeBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
 			
 			<ResourceDictionary.MergedDictionaries>
-				<ResourceInclude Source="avares://PlaylistEditorX/Styles/NavigationViewStyles.axaml" />
-				<ResourceInclude Source="avares://PlaylistEditorX/Styles/NavigationViewItemStyles.axaml" />
-				<ResourceInclude Source="avares://PlaylistEditorX/Styles/NavigationViewItemPresenterStyles.axaml" />
-				<ResourceInclude Source="avares://PlaylistEditorX/Styles/WindowDecorations.axaml" />
+				<ResourceInclude Source="avares://PlaylistEditor/Styles/NavigationViewStyles.axaml" />
+				<ResourceInclude Source="avares://PlaylistEditor/Styles/NavigationViewItemStyles.axaml" />
+				<ResourceInclude Source="avares://PlaylistEditor/Styles/NavigationViewItemPresenterStyles.axaml" />
+				<ResourceInclude Source="avares://PlaylistEditor/Styles/WindowDecorations.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 
 			<!-- Inner Styling: The Custom Segmented TabItem Theme -->

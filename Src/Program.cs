@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using System;
 
-namespace PlaylistEditorX
+namespace PlaylistEditor
 {
     internal sealed class Program
     {

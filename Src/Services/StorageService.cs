@@ -1,14 +1,14 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
-using PlaylistEditorX.Views;
+using PlaylistEditor.Views;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PlaylistEditorX.Services;
+namespace PlaylistEditor.Services;
 
 public class StorageService : IStorageService
 {
