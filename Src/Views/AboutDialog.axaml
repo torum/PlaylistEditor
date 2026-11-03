@@ -16,7 +16,7 @@
 					<TextBlock Text="{Binding AppVersion, Mode=OneWay}" VerticalAlignment="Bottom"/>
 					<HyperlinkButton NavigateUri="https://github.com/torum/PlaylistEditor">
 						<TextBlock>
-							<Run>Open Source Repository</Run>
+							<Run>Visit GitHub Project Page</Run>
 						</TextBlock>
 					</HyperlinkButton>
 				</StackPanel>

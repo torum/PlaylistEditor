@@ -7,6 +7,9 @@ A simple, cross-platform desktop playlist editor and converter. It allows you to
 
 This project is a direct port of [Playlist-editor](https://github.com/torum/Playlist-editor), which was originally developed in 2018 using [ObjectPascal/Lazarus](https://www.lazarus-ide.org/). This modern iteration has been rebuilt using C#/.NET and [Avalonia UI](https://github.com/AvaloniaUI/Avalonia).
 
+### Screenshot
+<img width="800" alt="Playlist Editor" src="https://github.com/torum/PlaylistEditor/blob/main/Doc/Img/PlaylistEditorScreenshot.png">
+
 ### Format convert
 - .txt(iTunes TSV) -> .m3u/.xspf 
 - .m3u <-> .xspf  
