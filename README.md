@@ -1,7 +1,7 @@
 # PlaylistEditor
 
 
-<img width="48" src="https://github.com/torum/MPDCtrlX/blob/main/Src/Assets/PlaylistEditorLogo.png">
+<img width="48" src="https://github.com/torum/PlaylistEditor/blob/main/Src/Assets/PlaylistEditorLogo.png">
 
 A simple, cross-platform desktop playlist editor and converter. PlaylistEditor allows you to open iTunes TXT or M3U or XSPF, edit and save them as M3U or XSPF playlists. The aim is to ease the transfering of a media library from one computer to another.  
 
