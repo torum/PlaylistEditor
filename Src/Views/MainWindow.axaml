@@ -26,7 +26,9 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid x:Name="ContentGrid" RowDefinitions="Auto,*">
+        <Border x:Name="BackgroundLayerBorder" Grid.Row="0" Grid.RowSpan="2" IsVisible="{OnPlatform Default=False, Windows=False, Linux=True, x:TypeArguments=x:Boolean}"></Border>
+
         <!-- Title Bar -->
         <Border Grid.Row="0" WindowDecorationProperties.ElementRole="TitleBar">
 

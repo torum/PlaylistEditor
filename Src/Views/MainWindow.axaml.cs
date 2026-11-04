@@ -3,9 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using PlaylistEditor.Models;
@@ -15,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -98,6 +101,16 @@ public partial class MainWindow : Window
         this.Activated += Window_Activated;
         this.Deactivated += Window_Deactivated;
         this.Resized += Window_Resized;
+        this.PropertyChanged += OnWindow_PropertyChanged;
+        this.ActualThemeVariantChanged += OnActualThemeVariantChanged;
+        this.PositionChanged += MainWindow_PositionChanged;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var isMax = this.WindowState == WindowState.Maximized;
+            UpdateWindowMargins(isMax);
+            UpdateThemeBackground(ActualThemeVariant);
+        }
     }
 
     protected override void OnOpened(EventArgs e)
@@ -125,6 +138,9 @@ public partial class MainWindow : Window
         this.Activated -= Window_Activated;
         this.Deactivated -= Window_Deactivated;
         this.Resized -= Window_Resized;
+        this.PropertyChanged -= this.OnWindow_PropertyChanged;
+        this.ActualThemeVariantChanged -= OnActualThemeVariantChanged;
+        this.PositionChanged -= MainWindow_PositionChanged;
 
         base.OnClosed(e);
 
@@ -144,6 +160,99 @@ public partial class MainWindow : Window
         else
         {
             this.Cursor = new Cursor(StandardCursorType.Arrow);
+        }
+    }
+
+    private void OnActualThemeVariantChanged(object? sender, EventArgs e)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            UpdateThemeBackground(ActualThemeVariant);
+        }
+    }
+
+    private void UpdateWindowMargins(bool isMax)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            if (isMax)
+            {
+                // It's actually 10px on all sides, but the window border is 2px, so the total is 10px.
+                // This covers the window border and makes it look little sophisticated.
+                this.ContentGrid.Margin = new Thickness(0, 0, 0, 0);
+                this.BackgroundLayerBorder.Margin = new Thickness(0, 0, 0, 0);
+            }
+            else
+            {
+                // It's actually 10px on all sides, but the window border is 2px, so the total is 10px.
+                // This covers the window border and makes it look little sophisticated.
+                this.ContentGrid.Margin = new Thickness(9);
+                this.BackgroundLayerBorder.Margin = new Thickness(7);
+            }
+        }
+    }
+
+    private void UpdateThemeBackground(ThemeVariant theme)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            this.BackgroundLayerBorder.IsVisible = true;
+            this.BackgroundLayerBorder.Opacity = 1;
+
+            if (theme == ThemeVariant.Dark)
+            {
+                //this.TransparencyLevelHint = [WindowTransparencyLevel.AcrylicBlur];
+                this.BackgroundLayerBorder.Background = new SolidColorBrush(Color.Parse("#202020"));
+            }
+            else if (theme == ThemeVariant.Light)
+            {
+                //this.TransparencyLevelHint = [WindowTransparencyLevel.Blur];
+                this.BackgroundLayerBorder.Background = new SolidColorBrush(Color.Parse("#EEEEEE"));
+            }
+            else if (theme == ThemeVariant.Default)
+            {
+                //this.TransparencyLevelHint = [WindowTransparencyLevel.AcrylicBlur];
+                this.BackgroundLayerBorder.Background = new SolidColorBrush(Color.Parse("#121212"));
+            }
+        }
+    }
+
+    private void OnWindow_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            if (sender is not Window)
+            {
+                return;
+            }
+            if (e.Property.Name != nameof(WindowState))
+            {
+                return;
+            }
+
+            // For linux.
+            if (e.NewValue != null && e.OldValue != null)
+            {
+                if (e.NewValue.Equals(e.OldValue))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+
+            //Debug.WriteLine($"WindowState changed from {e.OldValue} to {e.NewValue}");
+
+            if (e.NewValue is WindowState.FullScreen || e.NewValue is WindowState.Maximized)
+            {
+                UpdateWindowMargins(true);
+            }
+            else
+            {
+                UpdateWindowMargins(false);
+            }
         }
     }
 
@@ -583,6 +692,17 @@ public partial class MainWindow : Window
     }
 
     private void Window_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (this.WindowState == WindowState.Normal)
+        {
+            _winRestoreHeight = (int)this.Height;
+            _winRestoreWidth = (int)this.Width;
+            _winRestoreTop = this.Position.Y;
+            _winRestoreLeft = this.Position.X;
+        }
+    }
+
+    private void MainWindow_PositionChanged(object? sender, PixelPointEventArgs e)
     {
         if (this.WindowState == WindowState.Normal)
         {
