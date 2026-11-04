@@ -96,15 +96,6 @@ public partial class MainWindow : Window
 
         this.PlaylistListBox.AddHandler(InputElement.PointerPressedEvent, OnItemPointerPressed, RoutingStrategies.Tunnel);
 
-        this.Closing += Window_Closing;
-        this.SizeChanged += Window_SizeChanged;
-        this.Activated += Window_Activated;
-        this.Deactivated += Window_Deactivated;
-        this.Resized += Window_Resized;
-        this.PropertyChanged += OnWindow_PropertyChanged;
-        this.ActualThemeVariantChanged += OnActualThemeVariantChanged;
-        this.PositionChanged += MainWindow_PositionChanged;
-
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             var isMax = this.WindowState == WindowState.Maximized;
@@ -116,6 +107,15 @@ public partial class MainWindow : Window
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+
+        this.Closing += Window_Closing;
+        this.SizeChanged += Window_SizeChanged;
+        this.Activated += Window_Activated;
+        this.Deactivated += Window_Deactivated;
+        this.Resized += Window_Resized;
+        this.PropertyChanged += OnWindow_PropertyChanged;
+        this.ActualThemeVariantChanged += OnActualThemeVariantChanged;
+        this.PositionChanged += MainWindow_PositionChanged;
 
         if (DataContext is not MainViewModel _mainViewModel)
         {
@@ -133,6 +133,8 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        base.OnClosed(e);
+
         //this.Closing -= Window_Closing;
         this.SizeChanged -= Window_SizeChanged;
         this.Activated -= Window_Activated;
@@ -141,8 +143,6 @@ public partial class MainWindow : Window
         this.PropertyChanged -= this.OnWindow_PropertyChanged;
         this.ActualThemeVariantChanged -= OnActualThemeVariantChanged;
         this.PositionChanged -= MainWindow_PositionChanged;
-
-        base.OnClosed(e);
 
         if (DataContext is not MainViewModel _mainViewModel)
         {
